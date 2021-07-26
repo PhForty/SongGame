@@ -29,10 +29,10 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `songs` (
-  `youtube_link` text COLLATE latin1_german1_ci NOT NULL,
+  `youtube_link` text NOT NULL,
   `timestamp` date NOT NULL DEFAULT current_timestamp(),
   `ID` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_german1_ci;
+);
 
 --
 -- Daten für Tabelle `songs`
