@@ -1,24 +1,24 @@
 <!DOCTYPE html>
 <html lang="de">
     <?php
-    error_reporting(0);
-      $row;
-      $conn = new mysqli("127.0.0.1", "song_user", "wrjkn422", "song_game");
-      if ($conn->connect_error) {
+      try {
+        $conn = new mysqli("database", "root", "wrjkn422", "song_game");
+      }
+      catch (exception $e) {
         echo "Die Datenbankverbindung hat leider nicht geklappt.";
-      } else {
-        if(isset($_POST['next']) && $_POST['next'] == "yes"){
-          $query = "SELECT youtube_link FROM songs ORDER BY RAND() LIMIT 1";
-          $result = $conn->query($query);
-          if ($result->num_rows == 1) {
-              $row = $result->fetch_assoc();
-              $queryDelete = $conn->prepare("DELETE FROM songs WHERE youtube_link=? LIMIT 1");
-              $queryDelete->bind_param("s",$row['youtube_link']);
-              $queryDelete->execute();
-              
-            }
-        }
-      } 
+      }
+      if(isset($_POST['next']) && $_POST['next'] == "yes"){
+        $query = "SELECT youtube_link FROM songs ORDER BY RAND() LIMIT 1";
+        $result = $conn->query($query);
+        $row;
+        if ($result->num_rows == 1) {
+            $row = $result->fetch_assoc();
+            $queryDelete = $conn->prepare("DELETE FROM songs WHERE youtube_link=? LIMIT 1");
+            $queryDelete->bind_param("s",$row['youtube_link']);
+            $queryDelete->execute();
+            
+          }
+      }
     ?>
   <head>
     <meta charset="utf-8">
@@ -32,7 +32,7 @@
           navigator.clipboard.writeText(link);
         }
     </script>
-    <title>Song Spiel - Hauptseite</title>
+    <title>Hauptseite</title>
   </head>
   <body>
   <div id="wrapper">

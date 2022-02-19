@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html lang="de">
     <?php
-    error_reporting(0);
-      $conn = new mysqli("127.0.0.1", "song_user", "wrjkn422", "song_game");
-      if ($conn->connect_error) {
+      try {
+        $conn = new mysqli("database", "root", "wrjkn422", "song_game");
+      }
+      catch (exception $e) {
         echo "Die Datenbankverbindung hat leider nicht geklappt.";
-      } else {
-        if(isset($_POST['link']) && !empty($_POST['link'])){
-          $link = $_POST['link'];
-          $query = $conn->prepare("INSERT INTO songs (youtube_link) VALUES (?)");
-          $query->bind_param("s",$link);
-          $query->execute();
-          
-          $conn->close();
-        }
+      }
+      if(isset($_POST['link']) && !empty($_POST['link'])){
+        $link = $_POST['link'];
+        $query = $conn->prepare("INSERT INTO songs (youtube_link) VALUES (?)");
+        $query->bind_param("s",$link);
+        $query->execute();
+        
+        $conn->close();
       }
         
     ?>
@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.1/build/base-min.css">
     <link rel="stylesheet" href="https://unpkg.com/purecss@2.0.5/build/pure-min.css" integrity="sha384-LTIDeidl25h2dPxrB2Ekgc9c7sEC3CWGM6HeFmuDNUjX76Ert4Z4IY714dhZHPLd" crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" href="style.css" media="screen" />
-    <title>Song Spiel - Abgabe</title>
+    <title>Eingabe</title>
   </head>
   <body>
   <div id="wrapper">
