@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <html lang="de">
     <?php
-    error_reporting(0);
-        $conn = new mysqli("127.0.0.1", "song_user", "wrjkn422", "song_game");
-        if ($conn->connect_error) {
+        try {
+            $conn = new mysqli("database", "root", "wrjkn422", "song_game");
+          }
+        catch (exception $e) {
             echo "Die Datenbankverbindung hat leider nicht geklappt.";
-        } else {
-            if(isset($_POST['deleteAll']) && $_POST['deleteAll'] == "yes"){
-                $queryDeleteAll = "TRUNCATE TABLE songs";
-                $resultDeleteAll = $conn->query($queryDeleteAll);
-                if ($conn->query($queryDeleteAll) === TRUE) {
-                    //Alle erfolgreich gelöscht
-                }
-            }
-
-            $queryListAll = "SELECT youtube_link FROM songs";
-            $resultListAll = $conn->query($queryListAll);        
         }
+        if(isset($_POST['deleteAll']) && $_POST['deleteAll'] == "yes"){
+            $queryDeleteAll = "TRUNCATE TABLE songs";
+            $resultDeleteAll = $conn->query($queryDeleteAll);
+            if ($conn->query($queryDeleteAll) === TRUE) {
+                //Alle erfolgreich gelöscht
+            }
+        }
+
+        $queryListAll = "SELECT youtube_link FROM songs";
+        $resultListAll = $conn->query($queryListAll);        
         $conn->close();
     ?>
     <head>
@@ -26,7 +26,7 @@
         <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.1/build/base-min.css">
         <link rel="stylesheet" href="https://unpkg.com/purecss@2.0.5/build/pure-min.css" integrity="sha384-LTIDeidl25h2dPxrB2Ekgc9c7sEC3CWGM6HeFmuDNUjX76Ert4Z4IY714dhZHPLd" crossorigin="anonymous">
         <link rel="stylesheet" type="text/css" href="style.css" media="screen" />
-        <title>Song Spiel - AdminView</title>
+        <title>AdminView</title>
     </head>
     <body>
     <div id="wrapper">
