@@ -14,3 +14,5 @@ Dann im Browser https://localhost:80 öffnen
 Git Repo klonen
 Webserver aufsetzen (z.B. Apache) - src/ dort reinkopieren
 Datenbank aufsetzen (Mit passendem User und Namen, s. PHP Files)
+
+## Todos
