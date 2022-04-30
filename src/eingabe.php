@@ -39,7 +39,7 @@
         </nav>
     </header>
     <main>
-        <form action="eingabe.php" class="pure-form pure-form-stacked" method="post">
+        <form action="eingabe" class="pure-form pure-form-stacked" method="post">
             <input autofocus type="text" id="link" name="link" placeholder="Youtube-Link">
             <button class="pure-button pure-button-primary" type="submit" value="Submit">Abschicken</button>
         </form>

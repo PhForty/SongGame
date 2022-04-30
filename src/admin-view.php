@@ -53,7 +53,7 @@
                     }
                 ?>
             </section>
-            <form action="admin-view.php" method="post">
+            <form action="admin-view" method="post">
                 <button class="button-error pure-button" name="deleteAll" type="submit" value="yes">ALLE BISHER ABGEGEBENEN LINKS LÖSCHEN</button>
             </form>
         </main>

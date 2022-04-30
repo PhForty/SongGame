@@ -66,7 +66,7 @@
          echo "<p id='linkinfo'>Klicke <u onClick=\"alert('".htmlentities($row["youtube_link"])."')\">hier</u> um den unverarbeiteten Link zu sehen (nur notwendig, wenn der embedded Player nicht funktioniert).</p>";
           }
           ?>
-        <form class="pure-form pure-form-aligned" action="game.php" method="post">
+        <form class="pure-form pure-form-aligned" action="game" method="post">
             <button class="pure-button pure-button-primary" name="next" type="submit" value="yes">Nächster Link</button>
         </form>
         <?php

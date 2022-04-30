@@ -35,16 +35,6 @@ CREATE TABLE `songs` (
 );
 
 --
--- Daten für Tabelle `songs`
---
-
-INSERT INTO `songs` (`youtube_link`, `timestamp`, `ID`) VALUES
-('https://www.youtube.com/watch?v=RRsq9apr5QY', '2021-03-18', 5),
-('https://www.youtube.com/watch?v=RRsq9apr5QY', '2021-03-18', 6),
-('https://www.youtube.com/watch?v=RRsq9apr5QY', '2021-03-18', 7),
-('https://www.youtube.com/watch?v=RRsq9apr5QY', '2021-03-18', 8);
-
---
 -- Indizes der exportierten Tabellen
 --
 
