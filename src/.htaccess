@@ -1,6 +1,7 @@
 IndexIgnore # Prevent directory listing
 
 RewriteEngine on
+DirectoryIndex eingabe.php
 
 ## To externally redirect /dir/foo.php to /dir/foo
 RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s([^.]+)\.php [NC]
