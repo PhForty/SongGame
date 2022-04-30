@@ -16,3 +16,8 @@ Webserver aufsetzen (z.B. Apache) - src/ dort reinkopieren
 Datenbank aufsetzen (Mit passendem User und Namen, s. PHP Files)
 
 ## Todos
+* Output Liste am Ende von allen Links -> Für Interessierte
+* Counter auf Eingabe-Seite für Info
+* Link auf Github-Projekt einfügen
+* Spotify Embedded Player
+* Support für gleichzeitige Nutzung mehrerer Gruppen
