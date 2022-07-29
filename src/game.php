@@ -41,7 +41,7 @@ if(isset($_SESSION['StartedGame']) && $_SESSION['StartedGame'] == "yes") {
           navigator.clipboard.writeText(link);
         }
     </script>
-    <title>Hauptseite</title>
+    <title>Spiel</title>
   </head>
   <body>
   <div id="wrapper">

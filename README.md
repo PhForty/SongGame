@@ -21,7 +21,8 @@ Datenbank aufsetzen (Mit passendem User und Namen, s. PHP Files)
 * [ ] Counter auf Eingabe-Seite für Info
 * [ ] Spotify Embedded Player
 * [ ] Adminbereich besser schützen (z.B. nur einsehbar mit bekanntem Gruppencode?)
-* [ ] 404 Page
+* [ ] Refactor for readability + maintainability
+* [x] ~~404 Page~~
 * [x] ~~Link auf Github-Projekt einfügen~~
 
 # Quellen
