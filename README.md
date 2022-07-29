@@ -15,9 +15,14 @@ Git Repo klonen
 Webserver aufsetzen (z.B. Apache) - src/ dort reinkopieren
 Datenbank aufsetzen (Mit passendem User und Namen, s. PHP Files)
 
-## Todos
+# Todos
+* [ ] Support für gleichzeitige Nutzung mehrerer Gruppen
 * [ ] Output Liste am Ende von allen Links -> Für Interessierte
 * [ ] Counter auf Eingabe-Seite für Info
 * [ ] Spotify Embedded Player
-* [ ] Support für gleichzeitige Nutzung mehrerer Gruppen
-* [x] Link auf Github-Projekt einfügen
+* [ ] Adminbereich besser schützen (z.B. nur einsehbar mit bekanntem Gruppencode?)
+* [ ] 404 Page
+* [x] ~~Link auf Github-Projekt einfügen~~
+
+# Quellen
+Github Ribbon von [https://github.com/tholman/github-corners](Tholman); [MIT License](https://github.com/tholman/github-corners/blob/master/license.md)

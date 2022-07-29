@@ -16,3 +16,8 @@ services:
     environment:
       MARIADB_ROOT_PASSWORD: wrjkn422
       MARIADB_DATABASE: song_game
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080

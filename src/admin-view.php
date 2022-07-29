@@ -1,22 +1,31 @@
+<?php
+// Start the session
+session_start();
+
+include 'db-connect.php';
+
+if(isset($_SESSION['StartedGame']) && $_SESSION['StartedGame'] == "yes") {
+    //session is set
+  } else if(!isset($_SESSION['StartedGame']) || (isset($_SESION['StartedGame']) && $_SESSION['StartedGame'] == 0)){
+    //session is not set
+    header('Location: /index');
+  }
+?>
 <!DOCTYPE html>
 <html lang="de">
     <?php
-        try {
-            $conn = new mysqli("database", "root", "wrjkn422", "song_game");
-          }
-        catch (exception $e) {
-            echo "Die Datenbankverbindung hat leider nicht geklappt.";
-        }
         if(isset($_POST['deleteAll']) && $_POST['deleteAll'] == "yes"){
-            $queryDeleteAll = "TRUNCATE TABLE songs";
-            $resultDeleteAll = $conn->query($queryDeleteAll);
-            if ($conn->query($queryDeleteAll) === TRUE) {
+            $query = $conn->prepare("DELETE FROM songs WHERE `SpielID` = ?");
+            $query->bind_param("s",$_SESSION['SpielID']);
+            if ($query->execute()) {
                 //Alle erfolgreich gelöscht
             }
         }
 
-        $queryListAll = "SELECT youtube_link FROM songs";
-        $resultListAll = $conn->query($queryListAll);        
+        $query = $conn->prepare("SELECT youtube_link FROM songs WHERE `SpielID` = ?");
+        $query->bind_param("s",$_SESSION['SpielID']);
+        $query->execute();
+        $resultListAll = $query->get_result();    
         $conn->close();
     ?>
     <head>

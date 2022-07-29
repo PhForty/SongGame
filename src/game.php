@@ -1,20 +1,29 @@
+<?php
+// Start the session
+session_start();
+
+include 'db-connect.php';
+
+if(isset($_SESSION['StartedGame']) && $_SESSION['StartedGame'] == "yes") {
+  //session is set
+} else if(!isset($_SESSION['StartedGame']) || (isset($_SESION['StartedGame']) && $_SESSION['StartedGame'] == 0)){
+  //session is not set
+  header('Location: /index');
+}
+?>
 <!DOCTYPE html>
 <html lang="de">
     <?php
-      try {
-        $conn = new mysqli("database", "root", "wrjkn422", "song_game");
-      }
-      catch (exception $e) {
-        echo "Die Datenbankverbindung hat leider nicht geklappt.";
-      }
       if(isset($_POST['next']) && $_POST['next'] == "yes"){
-        $query = "SELECT youtube_link FROM songs ORDER BY RAND() LIMIT 1";
-        $result = $conn->query($query);
+        $query = $conn->prepare("SELECT youtube_link FROM songs WHERE `SpielID` = ? ORDER BY RAND() LIMIT 1");
+        $query->bind_param("s",$_SESSION['SpielID']);
+        $query->execute();
+        $result = $query->get_result();
         $row;
         if ($result->num_rows == 1) {
             $row = $result->fetch_assoc();
-            $queryDelete = $conn->prepare("DELETE FROM songs WHERE youtube_link=? LIMIT 1");
-            $queryDelete->bind_param("s",$row['youtube_link']);
+            $queryDelete = $conn->prepare("DELETE FROM songs WHERE youtube_link=? AND `SpielID` = ? LIMIT 1");
+            $queryDelete->bind_param("ss",$row['youtube_link'],$_SESSION['SpielID']);
             $queryDelete->execute();
             
           }
@@ -71,11 +80,10 @@
             <button class="pure-button pure-button-primary" name="next" type="submit" value="yes">Nächster Link</button>
         </form>
         <?php
-        if ($conn->connect_error) {
-          echo "Die Datenbankverbindung hat leider nicht geklappt.";
-        } else {
-          $query = "SELECT COUNT(*) FROM songs";
-          $result = $conn->query($query);
+          $query = $conn->prepare("SELECT COUNT(*) FROM songs WHERE `SpielID` = ?");
+          $query->bind_param("s",$_SESSION['SpielID']);
+          $query->execute();
+          $result = $query->get_result();
           if($result!==false){
             $row = $result->fetch_assoc();
             if($row['COUNT(*)']!=0){
@@ -85,7 +93,7 @@
             }
           }
           $conn->close();
-        }
+
           
         ?>
         
