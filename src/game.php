@@ -1,46 +1,34 @@
 <?php
-// Start the session
 session_start();
-
 include 'db-connect.php';
 
-if(isset($_SESSION['StartedGame']) && $_SESSION['StartedGame'] == "yes") {
-  //session is set
-} else if(!isset($_SESSION['StartedGame']) || (isset($_SESION['StartedGame']) && $_SESSION['StartedGame'] == 0)){
-  //session is not set
+if(!isset($_SESSION['StartedGame']) || (isset($_SESION['StartedGame']) && $_SESSION['StartedGame'] == 0)) {
   header('Location: /index');
+}
+
+if(isset($_POST['next']) && $_POST['next'] == "yes"){
+  $query = $conn->prepare("SELECT youtube_link FROM songs WHERE `SpielID` = ? ORDER BY RAND() LIMIT 1");
+  $query->bind_param("s",$_SESSION['SpielID']);
+  $query->execute();
+  $result = $query->get_result();
+  $row;
+  if ($result->num_rows == 1) {
+      $row = $result->fetch_assoc();
+      $queryDelete = $conn->prepare("DELETE FROM songs WHERE youtube_link=? AND `SpielID` = ? LIMIT 1");
+      $queryDelete->bind_param("ss",$row['youtube_link'],$_SESSION['SpielID']);
+      $queryDelete->execute();
+      
+    }
 }
 ?>
 <!DOCTYPE html>
 <html lang="de">
-    <?php
-      if(isset($_POST['next']) && $_POST['next'] == "yes"){
-        $query = $conn->prepare("SELECT youtube_link FROM songs WHERE `SpielID` = ? ORDER BY RAND() LIMIT 1");
-        $query->bind_param("s",$_SESSION['SpielID']);
-        $query->execute();
-        $result = $query->get_result();
-        $row;
-        if ($result->num_rows == 1) {
-            $row = $result->fetch_assoc();
-            $queryDelete = $conn->prepare("DELETE FROM songs WHERE youtube_link=? AND `SpielID` = ? LIMIT 1");
-            $queryDelete->bind_param("ss",$row['youtube_link'],$_SESSION['SpielID']);
-            $queryDelete->execute();
-            
-          }
-      }
-    ?>
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="favicon.ico">
-    <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.1/build/base-min.css">
     <link rel="stylesheet" href="https://unpkg.com/purecss@2.0.5/build/pure-min.css" integrity="sha384-LTIDeidl25h2dPxrB2Ekgc9c7sEC3CWGM6HeFmuDNUjX76Ert4Z4IY714dhZHPLd" crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" href="style.css" media="screen" />
-    <script>
-        function copyToClipboard(link) {
-          navigator.clipboard.writeText(link);
-        }
-    </script>
     <title>Spiel</title>
   </head>
   <body>
@@ -59,7 +47,6 @@ if(isset($_SESSION['StartedGame']) && $_SESSION['StartedGame'] == "yes") {
         </nav>
     </header>
     <main>
-    
         <?php if(isset($_POST['next']) && !empty($_POST['next']) && isset($row["youtube_link"]) && !empty($row["youtube_link"])) {
           $patternID = "/(\/|%3D|v=)([0-9A-z-_]{11})([%#?&]|$)/";
           $patternTimestamp = "/[\?&]t=([0-9]+)/";
@@ -68,17 +55,14 @@ if(isset($_SESSION['StartedGame']) && $_SESSION['StartedGame'] == "yes") {
             preg_match($patternTimestamp, $row["youtube_link"], $matchTimestamp); // Regex für Timestamp
             $embedLink = "https://www.youtube.com/embed/$matchID[2]?start=$matchTimestamp[1]";
             echo "<div id='videocontainer'><iframe src='$embedLink' frameborder='0' allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture' allowfullscreen></iframe></div>";
+
+            echo "<p id='linkinfo'>Klicke <u onClick=\"alert('".htmlentities($row["youtube_link"])."')\">hier</u> um den unverarbeiteten Link zu sehen (nur notwendig, wenn der embedded Player nicht funktioniert).</p>";
           } 
           else {
-            echo "<p>Der Link kann leider nicht korrekt verarbeitet werden. <br> Bitte kopieren und selber im neuen Tab öffnen.</p>";
+            echo "<p>Das Video kann nicht angezeigt werden, wahrscheinlich ist es kein Youtube-Link. <br> Bitte kopieren und selber im neuen Tab öffnen: ".htmlentities($row["youtube_link"])."</p>";
           }
-        } ?>
-        <?php
-          if(isset($_POST['next']) && !empty($_POST['next']) && isset($row["youtube_link"]) && !empty($row["youtube_link"])){
-            
-         echo "<p id='linkinfo'>Klicke <u onClick=\"alert('".htmlentities($row["youtube_link"])."')\">hier</u> um den unverarbeiteten Link zu sehen (nur notwendig, wenn der embedded Player nicht funktioniert).</p>";
-          }
-          ?>
+        }
+        ?>
         <form class="pure-form pure-form-aligned" action="game" method="post">
             <button class="pure-button pure-button-primary" name="next" type="submit" value="yes">Nächster Link</button>
         </form>
@@ -99,9 +83,6 @@ if(isset($_SESSION['StartedGame']) && $_SESSION['StartedGame'] == "yes") {
         ?>
         <p> Aktuelles Spiel: <strong><?php print($_SESSION['SpielID'])?></strong></p>
     </main>
-    <footer>
-
-    </footer>
   </div>
   </body>
 </html>

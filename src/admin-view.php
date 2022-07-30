@@ -1,38 +1,31 @@
 <?php
-// Start the session
 session_start();
-
 include 'db-connect.php';
 
-if(isset($_SESSION['StartedGame']) && $_SESSION['StartedGame'] == "yes") {
-    //session is set
-  } else if(!isset($_SESSION['StartedGame']) || (isset($_SESION['StartedGame']) && $_SESSION['StartedGame'] == 0)){
-    //session is not set
+if(!isset($_SESSION['StartedGame']) || (isset($_SESION['StartedGame']) && $_SESSION['StartedGame'] == 0)) {
     header('Location: /index');
-  }
+}
+
+if(isset($_POST['deleteAll']) && $_POST['deleteAll'] == "yes"){
+    $query = $conn->prepare("DELETE FROM songs WHERE `SpielID` = ?");
+    $query->bind_param("s",$_SESSION['SpielID']);
+    if ($query->execute()) {
+        //Alle erfolgreich gelöscht
+    }
+}
+
+$query = $conn->prepare("SELECT youtube_link FROM songs WHERE `SpielID` = ?");
+$query->bind_param("s",$_SESSION['SpielID']);
+$query->execute();
+$resultListAll = $query->get_result();    
+$conn->close();
 ?>
 <!DOCTYPE html>
 <html lang="de">
-    <?php
-        if(isset($_POST['deleteAll']) && $_POST['deleteAll'] == "yes"){
-            $query = $conn->prepare("DELETE FROM songs WHERE `SpielID` = ?");
-            $query->bind_param("s",$_SESSION['SpielID']);
-            if ($query->execute()) {
-                //Alle erfolgreich gelöscht
-            }
-        }
-
-        $query = $conn->prepare("SELECT youtube_link FROM songs WHERE `SpielID` = ?");
-        $query->bind_param("s",$_SESSION['SpielID']);
-        $query->execute();
-        $resultListAll = $query->get_result();    
-        $conn->close();
-    ?>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="icon" href="favicon.ico">
-        <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.1/build/base-min.css">
         <link rel="stylesheet" href="https://unpkg.com/purecss@2.0.5/build/pure-min.css" integrity="sha384-LTIDeidl25h2dPxrB2Ekgc9c7sEC3CWGM6HeFmuDNUjX76Ert4Z4IY714dhZHPLd" crossorigin="anonymous">
         <link rel="stylesheet" type="text/css" href="style.css" media="screen" />
         <title>AdminView</title>
@@ -70,9 +63,6 @@ if(isset($_SESSION['StartedGame']) && $_SESSION['StartedGame'] == "yes") {
                 <button class="button-error pure-button" name="deleteAll" type="submit" value="yes">ALLE BISHER ABGEGEBENEN LINKS LÖSCHEN</button>
             </form>
         </main>
-        <footer>
-
-        </footer>
     </div>
     </body>
 </html>
