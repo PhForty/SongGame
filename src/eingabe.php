@@ -60,6 +60,7 @@ if(isset($_POST['link']) && !empty($_POST['link'])){
               echo "<p>Noch hat niemand ein Lied abgegeben.</p>";
             }
           }
+          $conn->close();
         ?>
         <p> Aktuelles Spiel: <strong><?php print($_SESSION['SpielID'])?></strong></p>
         <h3>Ablauf</h3>

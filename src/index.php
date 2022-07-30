@@ -40,7 +40,7 @@ if(isset($_POST['SpielID']) && strlen($_POST['SpielID']) == 5){
     $query = $conn->prepare("INSERT INTO session (SpielID) VALUES (?)");
     $query->bind_param("s",$rand);
     $query->execute();
-    
+    $conn->close();
     //Redirect to eingabe
     header("Location: eingabe", true, 301);
 }
