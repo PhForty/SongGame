@@ -20,6 +20,7 @@ Datenbank aufsetzen (Mit passendem User und Namen, s. PHP Files)
 * [ ] Spotify Embedded Player
 * [ ] Adminbereich besser schützen (z.B. nur einsehbar mit bekanntem Gruppencode?)
 * [ ] Refactor for readability + maintainability (Close unneeded connections, disable warnings+errors, ...)
+* [x] ~~Logout~~
 * [x] ~~Counter auf Eingabe-Seite für Info~~
 * [x] ~~Support für gleichzeitige Nutzung mehrerer Gruppen~~
 * [x] ~~404 Page~~
