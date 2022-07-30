@@ -3,7 +3,7 @@ session_start();
 include 'db-connect.php';
 
 if(!isset($_SESSION['StartedGame']) || (isset($_SESION['StartedGame']) && $_SESSION['StartedGame'] == 0)) {
-  header('Location: /index');
+  header('Location: index');
 }
 
 if(isset($_POST['link']) && !empty($_POST['link'])){
