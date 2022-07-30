@@ -1,5 +1,5 @@
 # SongGame
-Kleine WebApp mit mysql Datenbank für das Songspiel. Sammelt anonym Links und spielt Youtube Videos ab.
+Kleine mandantenfähige WebApp für das Songspiel. Sammelt anonym Links und spielt Youtube Videos in zufälliger Reihenfolge ab.
 
 # Install
 ## Docker
@@ -8,17 +8,17 @@ git clone https://github.com/PhForty/SongGame.git
 cd SongGame
 docker-compose up
 ```
-Dann im Browser https://localhost:80 öffnen
+Dann im Browser https://localhost öffnen
 
 ## Manuell
-Git Repo klonen
-Webserver aufsetzen (z.B. Apache) - src/ dort reinkopieren
-Datenbank aufsetzen (Mit passendem User und Namen, s. PHP Files)
+* Git Repo klonen
+* Webserver aufsetzen (z.B. Apache) - src/ dort reinkopieren
+* Datenbank aufsetzen (Mit passendem User und Namen, s. PHP Files)
 
 # Todos
 * [ ] Output Liste am Ende von allen Links -> Für Interessierte
 * [ ] Spotify Embedded Player
-* [ ] Adminbereich besser schützen (z.B. nur einsehbar mit bekanntem Gruppencode?)
+* [x] ~~Adminbereich besser schützen (z.B. nur einsehbar mit bekanntem Gruppencode?)~~
 * [x] ~~Refactor for readability + maintainability (Close unneeded connections, disable warnings+errors, ...)~~
 * [x] ~~Logout~~
 * [x] ~~Counter auf Eingabe-Seite für Info~~
