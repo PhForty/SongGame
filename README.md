@@ -16,12 +16,12 @@ Webserver aufsetzen (z.B. Apache) - src/ dort reinkopieren
 Datenbank aufsetzen (Mit passendem User und Namen, s. PHP Files)
 
 # Todos
-* [ ] Support für gleichzeitige Nutzung mehrerer Gruppen
 * [ ] Output Liste am Ende von allen Links -> Für Interessierte
-* [ ] Counter auf Eingabe-Seite für Info
 * [ ] Spotify Embedded Player
 * [ ] Adminbereich besser schützen (z.B. nur einsehbar mit bekanntem Gruppencode?)
-* [ ] Refactor for readability + maintainability
+* [ ] Refactor for readability + maintainability (Close unneeded connections, disable warnings+errors, ...)
+* [x] ~~Counter auf Eingabe-Seite für Info~~
+* [x] ~~Support für gleichzeitige Nutzung mehrerer Gruppen~~
 * [x] ~~404 Page~~
 * [x] ~~Link auf Github-Projekt einfügen~~
 

@@ -19,8 +19,6 @@ if(isset($_SESSION['StartedGame']) && $_SESSION['StartedGame'] == "yes") {
         $query = $conn->prepare("INSERT INTO songs (youtube_link, SpielID) VALUES (?, ?)");
         $query->bind_param("ss",$link, $_SESSION['SpielID']);
         $query->execute();
-        
-        $conn->close();
       }
     ?>
   <head>
@@ -51,10 +49,23 @@ if(isset($_SESSION['StartedGame']) && $_SESSION['StartedGame'] == "yes") {
             <input autofocus type="text" id="link" name="link" placeholder="Youtube-Link">
             <button class="pure-button pure-button-primary" type="submit" id="AbschickenButton" value="Submit">Abschicken</button>
         </form>
-
-        <?php if(isset($_POST['link']) && !empty($_POST['link'])){ ?>
-            <p> Der Link ist jetzt im Lostopf! </p>
-        <?php } ?>
+        <?php 
+          if(isset($_POST['link']) && !empty($_POST['link'])){
+            echo "<p> Der Link ist jetzt im Lostopf! </p>";
+          }
+          $query = $conn->prepare("SELECT COUNT(*) FROM songs WHERE `SpielID` = ?");
+          $query->bind_param("s",$_SESSION['SpielID']);
+          $query->execute();
+          $result = $query->get_result();
+          if($result!==false){
+            $row = $result->fetch_assoc();
+            if($row['COUNT(*)']!=0){
+              echo "<p>Bereits abgegebene Lieder: ".$row['COUNT(*)']."</p>";
+            }else {
+              echo "<p>Noch hat niemand ein Lied abgegeben.</p>";
+            }
+          }
+        ?>
         <p> Aktuelles Spiel: <strong><?php print($_SESSION['SpielID'])?></strong></p>
         <h3>Ablauf</h3>
         <ol>
