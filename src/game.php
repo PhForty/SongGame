@@ -57,6 +57,7 @@ if(isset($_SESSION['StartedGame']) && $_SESSION['StartedGame'] == "yes") {
         </nav>
     </header>
     <main>
+    
         <?php if(isset($_POST['next']) && !empty($_POST['next']) && isset($row["youtube_link"]) && !empty($row["youtube_link"])) {
           $patternID = "/(\/|%3D|v=)([0-9A-z-_]{11})([%#?&]|$)/";
           $patternTimestamp = "/[\?&]t=([0-9]+)/";
@@ -93,10 +94,8 @@ if(isset($_SESSION['StartedGame']) && $_SESSION['StartedGame'] == "yes") {
             }
           }
           $conn->close();
-
-          
         ?>
-        
+        <p> Aktuelles Spiel: <strong><?php print($_SESSION['SpielID'])?></strong></p>
     </main>
     <footer>
 

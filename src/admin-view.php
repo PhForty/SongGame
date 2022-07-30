@@ -51,8 +51,9 @@ if(isset($_SESSION['StartedGame']) && $_SESSION['StartedGame'] == "yes") {
         </nav>
         </header>
         <main>
+        <p> Aktuelles Spiel: <strong><?php print($_SESSION['SpielID'])?></strong></p>
             <section>
-            <h2>Momentan existieren folgende Links in der Datenbank:</h2>
+            <h3>Momentan existieren folgende Links in der Datenbank:</h3>
                 <?php
                     if (isset($resultListAll)){
                         echo "<ul>";
