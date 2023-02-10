@@ -27,7 +27,7 @@ if(isset($_POST['next']) && $_POST['next'] == "yes"){
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="favicon.ico">
-    <link rel="stylesheet" href="https://unpkg.com/purecss@2.0.5/build/pure-min.css" integrity="sha384-LTIDeidl25h2dPxrB2Ekgc9c7sEC3CWGM6HeFmuDNUjX76Ert4Z4IY714dhZHPLd" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="pure-min.css" media="screen" />
     <link rel="stylesheet" type="text/css" href="style.css" media="screen" />
     <title>Spiel</title>
   </head>
