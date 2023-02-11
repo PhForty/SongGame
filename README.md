@@ -17,7 +17,10 @@ Dann im Browser https://localhost öffnen
 
 # Todos
 * [ ] Output Liste am Ende von allen Links -> Für Interessierte
+* [ ] Player controls: Automatic pauses and duration for playing
 * [ ] Spotify Embedded Player
+* [ ] 3 words instead of 5 letters for room codes (easier to communicate)
+* [ ] Github Projekt Button verschieben, auf mobilen Geräten gab es missclicks
 * [x] ~~Adminbereich besser schützen (z.B. nur einsehbar mit bekanntem Gruppencode?)~~
 * [x] ~~Refactor for readability + maintainability (Close unneeded connections, disable warnings+errors, ...)~~
 * [x] ~~Logout~~

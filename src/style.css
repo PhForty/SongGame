@@ -88,4 +88,5 @@ u:hover {
 
 #SpielBeitretenButton, #AbschickenButton{
     margin: 0;
+    text-transform: uppercase;
 }

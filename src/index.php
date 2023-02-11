@@ -6,7 +6,7 @@ if(isset($_POST['SpielID']) && strlen($_POST['SpielID']) == 5){
 
     //Pruefe auf Existenz SpielID in Datenbank
     $query = $conn->prepare("SELECT * FROM session WHERE `SpielID` = ?");
-    $query->bind_param("s",$_POST['SpielID']);
+    $query->bind_param("s",strtoupper($_POST['SpielID']));
     $query->execute();
     $result = $query->get_result();
     $data = $result->fetch_all(MYSQLI_ASSOC);
@@ -14,7 +14,7 @@ if(isset($_POST['SpielID']) && strlen($_POST['SpielID']) == 5){
 
     if (count($data) >= 1) {
         //Setze Sessionvariablen und leite weiter zu eingabe
-        $_SESSION["SpielID"] = $_POST['SpielID'];
+        $_SESSION["SpielID"] = strtoupper($_POST['SpielID']);
         $_SESSION["StartedGame"] = "yes";
         header("Location: eingabe", true, 301);
     } else {
