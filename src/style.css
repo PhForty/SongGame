@@ -89,7 +89,7 @@ u:hover {
     }
     }
 
-#SpielBeitretenButton, #AbschickenButton{
+#SpielID{
     margin: 0;
     text-transform: uppercase;
 }
