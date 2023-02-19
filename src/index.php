@@ -70,9 +70,10 @@ if(isset($_POST['SpielID']) && strlen($_POST['SpielID']) == 5){
             <button class="pure-button pure-button-primary pure-u-3-8" type="submit" value="NeuesSpiel" name="NeuesSpiel">Neues Spiel</button>
         </form>
     </main>
-    <a class="github-fork-ribbon left-bottom" href="https://github.com/PhForty/SongGame" data-ribbon="Fork me on GitHub" title="Fork me on GitHub">
-        Fork me on GitHub 
-</a>
+    <a class="github-fork-ribbon left-bottom pure-u-1-2" href="https://github.com/PhForty/SongGame" data-ribbon="Fork me on GitHub" title="Fork me on GitHub">
+            Fork me on GitHub 
+        </a>   
+
     </div>
   </body>
 </html>

@@ -70,6 +70,7 @@ if(isset($_POST['link']) && !empty($_POST['link'])){
           <li>Nachdem alle Links gesammelt wurden, wird <strong>ein</strong> Teilnehmer bestimmt, der auf die "Spiel"-Seite geht.</li>
           <li>Auf der "Spiel"-Seite können immer mit Klick auf "Nächster Link" alle Links in zufälliger Reihenfolge abgespielt werden. <strong>Jeder Link, der dran war, wird direkt gelöscht!</strong></li>
           <li>Viel Freude beim Spielen!</li>
+          <li>Ideen und Wünsche zur Anwendung gerne per <a href="mailto:contact@songgame.de">Mail</a></li>
         </ol>
     </main>
     <a class="github-fork-ribbon left-bottom" href="https://github.com/PhForty/SongGame" data-ribbon="Fork me on GitHub" title="Fork me on GitHub">

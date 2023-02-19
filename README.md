@@ -12,24 +12,15 @@ Dann im Browser https://localhost öffnen
 
 ## Manuell
 * Git Repo klonen
-* Webserver aufsetzen (z.B. Apache) - src/ dort reinkopieren
-* Datenbank aufsetzen (Mit passendem User und Namen, s. PHP Files)
+* Webserver aufsetzen (z.B. Apache) - `src/` dort reinkopieren
+* Datenbank aufsetzen (Mit passendem User und Namen, s. `db-connect.php`)
 
 # Todos
 * [ ] Output Liste am Ende von allen Links -> Für Interessierte
 * [ ] Player controls: Automatic pauses and duration for playing
 * [ ] Spotify Embedded Player
 * [ ] 3 words instead of 5 letters for room codes (easier to communicate)
-* [ ] Kontakt für Ideen per Mail einrichten
 * [ ] Togglebarer Nachtmodus
-* [x] ~~Github Projekt Button verschieben, auf mobilen Geräten gab es missclicks~~
-* [x] ~~Adminbereich besser schützen (z.B. nur einsehbar mit bekanntem Gruppencode?)~~
-* [x] ~~Refactor for readability + maintainability (Close unneeded connections, disable warnings+errors, ...)~~
-* [x] ~~Logout~~
-* [x] ~~Counter auf Eingabe-Seite für Info~~
-* [x] ~~Support für gleichzeitige Nutzung mehrerer Gruppen~~
-* [x] ~~404 Page~~
-* [x] ~~Link auf Github-Projekt einfügen~~
 
 # Quellen
 Github Ribbon von [simonwhitaker](https://github.com/simonwhitaker/github-fork-ribbon-css); [MIT License](https://github.com/tholman/github-corners/blob/master/license.md)
