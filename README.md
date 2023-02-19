@@ -20,7 +20,9 @@ Dann im Browser https://localhost öffnen
 * [ ] Player controls: Automatic pauses and duration for playing
 * [ ] Spotify Embedded Player
 * [ ] 3 words instead of 5 letters for room codes (easier to communicate)
-* [ ] Github Projekt Button verschieben, auf mobilen Geräten gab es missclicks
+* [ ] Kontakt für Ideen per Mail einrichten
+* [ ] Togglebarer Nachtmodus
+* [x] ~~Github Projekt Button verschieben, auf mobilen Geräten gab es missclicks~~
 * [x] ~~Adminbereich besser schützen (z.B. nur einsehbar mit bekanntem Gruppencode?)~~
 * [x] ~~Refactor for readability + maintainability (Close unneeded connections, disable warnings+errors, ...)~~
 * [x] ~~Logout~~
@@ -30,4 +32,4 @@ Dann im Browser https://localhost öffnen
 * [x] ~~Link auf Github-Projekt einfügen~~
 
 # Quellen
-Github Ribbon von [https://github.com/tholman/github-corners](Tholman); [MIT License](https://github.com/tholman/github-corners/blob/master/license.md)
+Github Ribbon von [simonwhitaker](https://github.com/simonwhitaker/github-fork-ribbon-css); [MIT License](https://github.com/tholman/github-corners/blob/master/license.md)

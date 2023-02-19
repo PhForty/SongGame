@@ -41,6 +41,9 @@ iframe {
     top: 0; 
     left: 0;
 }
+
+.github-fork-ribbon::before { background-color: #333; }
+
 .button-error {
     color: white;
     border-radius: 4px;
