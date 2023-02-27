@@ -9,6 +9,7 @@ SET NAMES utf8mb4;
 
 CREATE TABLE `session` (
   `SpielID` text NOT NULL,
+  `hasHost` int NOT NULL,
   `timestamp` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `id` int(11) NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`)

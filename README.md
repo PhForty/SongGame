@@ -21,6 +21,7 @@ Dann im Browser https://localhost öffnen
 * [ ] Spotify Embedded Player
 * [ ] 3 words instead of 5 letters for room codes (easier to communicate)
 * [ ] Togglebarer Nachtmodus
+* [ ] Klareren Eingabe-Flow machen, sodass es keine Erklärungen braucht
 
 # Quellen
 Github Ribbon von [simonwhitaker](https://github.com/simonwhitaker/github-fork-ribbon-css); [MIT License](https://github.com/tholman/github-corners/blob/master/license.md)

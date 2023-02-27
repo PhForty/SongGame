@@ -2,8 +2,8 @@
 session_start();
 include 'db-connect.php';
 
-if(!isset($_SESSION['StartedGame']) || (isset($_SESION['StartedGame']) && $_SESSION['StartedGame'] == 0)) {
-  header('Location: index');
+if(!isset($_SESSION['StartedGame']) || (isset($_SESSION['StartedGame']) && $_SESSION['StartedGame'] === 0) || (isset($_SESSION['isHost']) && !$_SESSION['isHost'])) {
+  header('Location: eingabe');
 }
 
 if(isset($_POST['next']) && $_POST['next'] == "yes"){
@@ -35,16 +35,22 @@ if(isset($_POST['next']) && $_POST['next'] == "yes"){
   <body>
   <div id="wrapper">
     <header>
-    <nav class="pure-menu pure-menu-horizontal">
+      <nav class="pure-menu pure-menu-horizontal">
           <ul class="pure-menu-list">
-            <li class="pure-menu-item">
-              <a class="pure-menu-link" href="eingabe.php">Eingabe</a></li>
-            <li class="pure-menu-item">
-              <a class="pure-menu-link" href="game.php">Spiel</a></li>
+            <?php
+            if(isset($_SESSION['isHost']) && $_SESSION['isHost']){
+              echo "<li class='pure-menu-item'>";
+              echo "<a class='pure-menu-link' href='eingabe.php'>Eingabe</a></li>";
+              echo "<li class='pure-menu-item'>";
+              echo "<a class='pure-menu-link' href='game.php'>Spiel</a></li>";
+              echo "<li class='pure-menu-item'>";
+              echo "<a class='pure-menu-link' href='admin-view.php'>Admin-View</a></li>";
+            }
+            ?>
             <li class="pure-menu-item">
             <a class="pure-menu-link" href="logout.php">Logout</a></li>
           </ul>
-          </nav>
+        </nav>
     </header>
     <main>
         <?php if(isset($_POST['next']) && !empty($_POST['next']) && isset($row["youtube_link"]) && !empty($row["youtube_link"])) {

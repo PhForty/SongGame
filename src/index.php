@@ -6,7 +6,8 @@ if(isset($_POST['SpielID']) && strlen($_POST['SpielID']) == 5){
 
     //Pruefe auf Existenz SpielID in Datenbank
     $query = $conn->prepare("SELECT * FROM session WHERE `SpielID` = ?");
-    $query->bind_param("s",strtoupper($_POST['SpielID']));
+    $UpperSpielID = strtoupper($_POST['SpielID']);
+    $query->bind_param("s",$UpperSpielID);
     $query->execute();
     $result = $query->get_result();
     $data = $result->fetch_all(MYSQLI_ASSOC);
@@ -16,9 +17,10 @@ if(isset($_POST['SpielID']) && strlen($_POST['SpielID']) == 5){
         //Setze Sessionvariablen und leite weiter zu eingabe
         $_SESSION["SpielID"] = strtoupper($_POST['SpielID']);
         $_SESSION["StartedGame"] = "yes";
+        $_SESSION["isHost"] = false;
         header("Location: eingabe", true, 301);
     } else {
-        //TODO: Fehlermeldung
+        //TODO: Fehlermeldung oder ähnliches. Wenn jemand 5 Chars eingibt und auf "Neues Spiel" klickt passt der Flow nicht
     }
 } else if (isset($_POST['NeuesSpiel']) && $_POST['NeuesSpiel']=='NeuesSpiel'){
     //Generate unique ID und setze sie
@@ -36,9 +38,11 @@ if(isset($_POST['SpielID']) && strlen($_POST['SpielID']) == 5){
     
     $_SESSION["SpielID"] = $rand;
     $_SESSION["StartedGame"] = "yes";
+    $_SESSION["isHost"] = true;
+    $isHost=1;
 
-    $query = $conn->prepare("INSERT INTO session (SpielID) VALUES (?)");
-    $query->bind_param("s",$rand);
+    $query = $conn->prepare("INSERT INTO session (SpielID, hasHost) VALUES (?, ?)");
+    $query->bind_param("si",$rand,$isHost);
     $query->execute();
     $conn->close();
     //Redirect to eingabe

@@ -2,7 +2,7 @@
 session_start();
 include 'db-connect.php';
 
-if(!isset($_SESSION['StartedGame']) || (isset($_SESION['StartedGame']) && $_SESSION['StartedGame'] == 0)) {
+if(!isset($_SESSION['StartedGame']) || (isset($_SESION['StartedGame']) && $_SESSION['StartedGame'] === 0)) {
   header('Location: index');
 }
 
@@ -11,6 +11,26 @@ if(isset($_POST['link']) && !empty($_POST['link'])){
   $query = $conn->prepare("INSERT INTO songs (youtube_link, SpielID) VALUES (?, ?)");
   $query->bind_param("ss",$link, $_SESSION['SpielID']);
   $query->execute();
+}
+
+if(isset($_POST['WerdeHost'])){
+  //Check if host is actually 0 (to prevent replay attacks)
+  $query = $conn->prepare("SELECT hasHost FROM session WHERE `SpielID` = ?");
+  $query->bind_param("s",$_SESSION['SpielID']);
+  $query->execute();
+  $result = $query->get_result();
+  $row = $result->fetch_assoc();
+  if($row['hasHost']==0) {
+    //Set all vars and refresh page
+    $_SESSION["isHost"] = true;
+
+    $query = $conn->prepare("UPDATE session SET hasHost=1 WHERE SpielID = ?");
+    $query->bind_param("s",$_SESSION['SpielID']);
+    $query->execute();
+    $conn->close();
+
+    header("Refresh:0");
+  }
 }
 ?>
 <!DOCTYPE html>
@@ -29,10 +49,16 @@ if(isset($_POST['link']) && !empty($_POST['link'])){
     <header>
         <nav class="pure-menu pure-menu-horizontal">
           <ul class="pure-menu-list">
-            <li class="pure-menu-item">
-              <a class="pure-menu-link" href="eingabe.php">Eingabe</a></li>
-            <li class="pure-menu-item">
-              <a class="pure-menu-link" href="game.php">Spiel</a></li>
+            <?php
+            if(isset($_SESSION['isHost']) && $_SESSION['isHost']){
+              echo "<li class='pure-menu-item'>";
+              echo "<a class='pure-menu-link' href='eingabe.php'>Eingabe</a></li>";
+              echo "<li class='pure-menu-item'>";
+              echo "<a class='pure-menu-link' href='game.php'>Spiel</a></li>";
+              echo "<li class='pure-menu-item'>";
+              echo "<a class='pure-menu-link' href='admin-view.php'>Admin-View</a></li>";
+            }
+            ?>
             <li class="pure-menu-item">
             <a class="pure-menu-link" href="logout.php">Logout</a></li>
           </ul>
@@ -40,7 +66,23 @@ if(isset($_POST['link']) && !empty($_POST['link'])){
         
       </header>
     <main>
-      
+        <?php 
+          if(isset($_SESSION['isHost']) && !$_SESSION['isHost']){
+            echo "<p>Spiel: <b>{$_SESSION['SpielID']}</b> - Rolle: <b>Teilnehmer</b><p>";
+            $query = $conn->prepare("SELECT hasHost FROM session WHERE `SpielID` = ?");
+            $query->bind_param("s",$_SESSION['SpielID']);
+            $query->execute();
+            $result = $query->get_result();
+            $row = $result->fetch_assoc();
+            if($row['hasHost']==0) {
+              echo "<form id='WerdeHost' action='eingabe' class='pure-form' method='post'>";
+              echo "<button class='pure-button pure-button-primary pure-u-3-8' type='submit' value='WerdeHost' name='WerdeHost'>Werde Host</button>";
+              echo "</form><br><br>";
+            }
+          } else {
+            echo "<p>Spiel: <b>{$_SESSION['SpielID']}</b> - Rolle: <b>Gastgeber</b><p>";
+          }
+        ?>
         <form action="eingabe" class="pure-form pure-form-stacked" method="post">
             <input autofocus type="text" id="link" name="link" placeholder="Youtube-Link">
             <button class="pure-button pure-button-primary" type="submit" id="AbschickenButton" value="Submit">Abschicken</button>
@@ -63,7 +105,6 @@ if(isset($_POST['link']) && !empty($_POST['link'])){
           }
           $conn->close();
         ?>
-        <p> Aktuelles Spiel: <strong><?php print($_SESSION['SpielID'])?></strong></p>
         <h3>Ablauf</h3>
         <ol>
           <li>Jeder sucht sich eine bestimmte Anzahl an Liedern, die jeder geheim für sich per Youtube-Link oben abgibt (Timestamps werden unterstützt).</li>
