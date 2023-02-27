@@ -40,15 +40,15 @@ if(isset($_POST['next']) && $_POST['next'] == "yes"){
             <?php
             if(isset($_SESSION['isHost']) && $_SESSION['isHost']){
               echo "<li class='pure-menu-item'>";
-              echo "<a class='pure-menu-link' href='eingabe.php'>Eingabe</a></li>";
+              echo "<a class='pure-menu-link' href='eingabe'>Eingabe</a></li>";
               echo "<li class='pure-menu-item'>";
-              echo "<a class='pure-menu-link' href='game.php'>Spiel</a></li>";
+              echo "<a class='pure-menu-link' href='viewer'>Spiel</a></li>";
               echo "<li class='pure-menu-item'>";
-              echo "<a class='pure-menu-link' href='admin-view.php'>Admin-View</a></li>";
+              echo "<a class='pure-menu-link' href='admin-view'>Admin-View</a></li>";
             }
             ?>
             <li class="pure-menu-item">
-            <a class="pure-menu-link" href="logout.php">Logout</a></li>
+            <a class="pure-menu-link" href="logout">Logout</a></li>
           </ul>
         </nav>
     </header>
@@ -69,7 +69,7 @@ if(isset($_POST['next']) && $_POST['next'] == "yes"){
           }
         }
         ?>
-        <form class="pure-form pure-form-aligned" action="game" method="post">
+        <form class="pure-form pure-form-aligned" action="viewer" method="post">
             <button class="pure-button pure-button-primary" name="next" type="submit" value="yes">Nächster Link</button>
         </form>
         <?php
@@ -80,7 +80,7 @@ if(isset($_POST['next']) && $_POST['next'] == "yes"){
           if($result!==false){
             $row = $result->fetch_assoc();
             if($row['COUNT(*)']!=0){
-              echo "<p>Momentan gibt es noch ".$row['COUNT(*)']." Links.</p>";
+              echo "<p>Verbleibende Videos: ".$row['COUNT(*)']." </p>";
             }else {
               echo "<p>Es gibt keine Links mehr.</p>";
             }
@@ -88,10 +88,6 @@ if(isset($_POST['next']) && $_POST['next'] == "yes"){
           $conn->close();
         ?>
         <p> Aktuelles Spiel: <strong><?php print($_SESSION['SpielID'])?></strong></p>
-    </main>
-    <a class="github-fork-ribbon left-bottom" href="https://github.com/PhForty/SongGame" data-ribbon="Fork me on GitHub" title="Fork me on GitHub">
-        Fork me on GitHub 
-</a>
   </div>
   </body>
 </html>

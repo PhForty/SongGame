@@ -38,15 +38,15 @@ $conn->close();
             <?php
             if(isset($_SESSION['isHost']) && $_SESSION['isHost']){
               echo "<li class='pure-menu-item'>";
-              echo "<a class='pure-menu-link' href='eingabe.php'>Eingabe</a></li>";
+              echo "<a class='pure-menu-link' href='eingabe'>Eingabe</a></li>";
               echo "<li class='pure-menu-item'>";
-              echo "<a class='pure-menu-link' href='game.php'>Spiel</a></li>";
+              echo "<a class='pure-menu-link' href='viewer'>Spiel</a></li>";
               echo "<li class='pure-menu-item'>";
-              echo "<a class='pure-menu-link' href='admin-view.php'>Admin-View</a></li>";
+              echo "<a class='pure-menu-link' href='admin-view'>Admin-View</a></li>";
             }
             ?>
             <li class="pure-menu-item">
-            <a class="pure-menu-link" href="logout.php">Logout</a></li>
+            <a class="pure-menu-link" href="logout">Logout</a></li>
           </ul>
         </nav>
         </header>

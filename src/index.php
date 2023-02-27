@@ -2,8 +2,10 @@
 session_start();
 include 'db-connect.php';
 
-if(isset($_POST['SpielID']) && strlen($_POST['SpielID']) == 5){
-
+if(isset($_SESSION['SpielID']) && isset($_SESSION["StartedGame"])){
+    header("Location: eingabe", true, 301);
+}
+else if(isset($_POST['SpielID']) && strlen($_POST['SpielID']) == 5){
     //Pruefe auf Existenz SpielID in Datenbank
     $query = $conn->prepare("SELECT * FROM session WHERE `SpielID` = ?");
     $UpperSpielID = strtoupper($_POST['SpielID']);
@@ -20,7 +22,7 @@ if(isset($_POST['SpielID']) && strlen($_POST['SpielID']) == 5){
         $_SESSION["isHost"] = false;
         header("Location: eingabe", true, 301);
     } else {
-        //TODO: Fehlermeldung oder ähnliches. Wenn jemand 5 Chars eingibt und auf "Neues Spiel" klickt passt der Flow nicht
+        //Evt. Fehlermeldung anzeigen?
     }
 } else if (isset($_POST['NeuesSpiel']) && $_POST['NeuesSpiel']=='NeuesSpiel'){
     //Generate unique ID und setze sie

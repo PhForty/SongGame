@@ -52,15 +52,15 @@ if(isset($_POST['WerdeHost'])){
             <?php
             if(isset($_SESSION['isHost']) && $_SESSION['isHost']){
               echo "<li class='pure-menu-item'>";
-              echo "<a class='pure-menu-link' href='eingabe.php'>Eingabe</a></li>";
+              echo "<a class='pure-menu-link' href='eingabe'>Eingabe</a></li>";
               echo "<li class='pure-menu-item'>";
-              echo "<a class='pure-menu-link' href='game.php'>Spiel</a></li>";
+              echo "<a class='pure-menu-link' href='viewer'>Spiel</a></li>";
               echo "<li class='pure-menu-item'>";
-              echo "<a class='pure-menu-link' href='admin-view.php'>Admin-View</a></li>";
+              echo "<a class='pure-menu-link' href='admin-view'>Admin-View</a></li>";
             }
             ?>
             <li class="pure-menu-item">
-            <a class="pure-menu-link" href="logout.php">Logout</a></li>
+            <a class="pure-menu-link" href="logout">Logout</a></li>
           </ul>
         </nav>
         
@@ -98,7 +98,7 @@ if(isset($_POST['WerdeHost'])){
           if($result!==false){
             $row = $result->fetch_assoc();
             if($row['COUNT(*)']!=0){
-              echo "<p>Bereits abgegebene Lieder: ".$row['COUNT(*)']."</p>";
+              echo "<p>Lieder im Lostopf: ".$row['COUNT(*)']."</p>";
             }else {
               echo "<p>Noch hat niemand ein Lied abgegeben.</p>";
             }
@@ -107,16 +107,12 @@ if(isset($_POST['WerdeHost'])){
         ?>
         <h3>Ablauf</h3>
         <ol>
-          <li>Jeder sucht sich eine bestimmte Anzahl an Liedern, die jeder geheim für sich per Youtube-Link oben abgibt (Timestamps werden unterstützt).</li>
-          <li>Nachdem alle Links gesammelt wurden, wird <strong>ein</strong> Teilnehmer bestimmt, der auf die "Spiel"-Seite geht.</li>
-          <li>Auf der "Spiel"-Seite können immer mit Klick auf "Nächster Link" alle Links in zufälliger Reihenfolge abgespielt werden. <strong>Jeder Link, der dran war, wird direkt gelöscht!</strong></li>
-          <li>Viel Freude beim Spielen!</li>
-          <li>Ideen und Wünsche zur Anwendung gerne per <a href="mailto:contact@songgame.de">Mail</a></li>
+          <li>Alle können Youtube-Links in den gemeinsamen Topf abgeben</li>
+          <li>Der Gastgeber startet das Spiel</li>
+          <li>Videos werden in zufälliger Reihenfolge gezeigt und nach dem Abspielen automatisch entfernt</li>
+          <li>Feedback gerne per <a href="mailto:contact@songgame.de">Mail</a> oder als <a href="https://github.com/PhForty/SongGame/issues">GitHub Issue</a></li>
         </ol>
     </main>
-    <a class="github-fork-ribbon left-bottom" href="https://github.com/PhForty/SongGame" data-ribbon="Fork me on GitHub" title="Fork me on GitHub">
-        Fork me on GitHub 
-</a>
     </div>
   </body>
 </html>
