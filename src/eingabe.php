@@ -68,7 +68,7 @@ if(isset($_POST['WerdeHost'])){
     <main>
         <?php 
           if(isset($_SESSION['isHost']) && !$_SESSION['isHost']){
-            echo "<p>Spiel: <b>{$_SESSION['SpielID']}</b> - Rolle: <b>Teilnehmer</b><p>";
+            echo "<p>Spiel: <b>{$_SESSION['SpielID']}</b> - Rolle: <b>Teilnehmer</b></p>";
             $query = $conn->prepare("SELECT hasHost FROM session WHERE `SpielID` = ?");
             $query->bind_param("s",$_SESSION['SpielID']);
             $query->execute();
@@ -80,7 +80,7 @@ if(isset($_POST['WerdeHost'])){
               echo "</form><br><br>";
             }
           } else {
-            echo "<p>Spiel: <b>{$_SESSION['SpielID']}</b> - Rolle: <b>Gastgeber</b><p>";
+            echo "<p>Spiel: <b>{$_SESSION['SpielID']}</b> - Rolle: <b>Gastgeber</b></p>";
           }
         ?>
         <form action="eingabe" class="pure-form pure-form-stacked" method="post">

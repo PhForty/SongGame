@@ -18,6 +18,7 @@ CREATE TABLE `session` (
 CREATE TABLE `songs` (
   `youtube_link` text NOT NULL,
   `timestamp` date NOT NULL DEFAULT current_timestamp(),
+  `wasViewed` int NOT NULL DEFAULT "0",
   `ID` int(11) NOT NULL AUTO_INCREMENT,
   `SpielID` tinytext NOT NULL,
   PRIMARY KEY (`ID`)

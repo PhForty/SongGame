@@ -13,13 +13,13 @@ if(isset($_POST['deleteAll']) && $_POST['deleteAll'] == "yes"){
         //Alle erfolgreich gelöscht
     }
 }
-
-$query = $conn->prepare("SELECT youtube_link FROM songs WHERE `SpielID` = ?");
+$query = $conn->prepare("SELECT youtube_link, wasViewed FROM songs WHERE `SpielID` = ?");
 $query->bind_param("s",$_SESSION['SpielID']);
 $query->execute();
 $resultListAll = $query->get_result();    
 $conn->close();
 ?>
+
 <!DOCTYPE html>
 <html lang="de">
     <head>
@@ -51,23 +51,39 @@ $conn->close();
         </nav>
         </header>
         <main>
-        <p> Aktuelles Spiel: <strong><?php print($_SESSION['SpielID'])?></strong></p>
-            <section>
-            <h3>Momentan existieren folgende Links in der Datenbank:</h3>
-                <?php
-                    if (isset($resultListAll)){
-                        echo "<ul>";
-                        foreach ($resultListAll as $link) {
-                            echo "<li>".htmlspecialchars($link['youtube_link'], ENT_QUOTES)."</li>";
+            <?php 
+            if(isset($_SESSION['isHost']) && !$_SESSION['isHost']){
+                echo "<p>Spiel: <b>{$_SESSION['SpielID']}</b> - Rolle: <b>Teilnehmer</b></p>";
+            } else {
+                echo "<p>Spiel: <b>{$_SESSION['SpielID']}</b> - Rolle: <b>Gastgeber</b></p>";
+            }?>
+                <button type="button" class="collapsible">Bereits abgespielte Links</button>
+                <div class="content">
+                    <?php
+                        if (isset($resultListAll)){
+                            foreach ($resultListAll as $link) {
+                                if($link['wasViewed'] === 1){echo "<p>".htmlspecialchars($link['youtube_link'], ENT_QUOTES)."</p>";}
+                            }
                         }
-                        echo "</ul>";
-                    }
-                ?>
-            </section>
+                    ?>
+                </div>
+                <br><br>
+                <button type="button" class="collapsible">Noch nicht abgespielte Links</button>
+                <div class="content">
+                    <?php
+                        if (isset($resultListAll)){
+                            foreach ($resultListAll as $link) {
+                                if($link['wasViewed'] === 0){echo "<p>".htmlspecialchars($link['youtube_link'], ENT_QUOTES)."</p>";}
+                            }
+                        }
+                    ?>
+                </div>
+            <br><br>
             <form action="admin-view" method="post">
-                <button class="button-error pure-button" name="deleteAll" type="submit" value="yes">ALLE BISHER ABGEGEBENEN LINKS LÖSCHEN</button>
+                <button class="button-error pure-button" name="deleteAll" type="submit" value="yes">ALLE LINKS LÖSCHEN</button>
             </form>
         </main>
     </div>
     </body>
+    <script src="utilities.js"></script>
 </html>

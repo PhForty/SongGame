@@ -6,15 +6,16 @@ if(!isset($_SESSION['StartedGame']) || (isset($_SESSION['StartedGame']) && $_SES
   header('Location: eingabe');
 }
 
+//Lade den naechsten Song
 if(isset($_POST['next']) && $_POST['next'] == "yes"){
-  $query = $conn->prepare("SELECT youtube_link FROM songs WHERE `SpielID` = ? ORDER BY RAND() LIMIT 1");
+  $query = $conn->prepare("SELECT youtube_link FROM songs WHERE `SpielID` = ? AND wasViewed = 0 ORDER BY RAND() LIMIT 1");
   $query->bind_param("s",$_SESSION['SpielID']);
   $query->execute();
   $result = $query->get_result();
   $row;
   if ($result->num_rows == 1) {
       $row = $result->fetch_assoc();
-      $queryDelete = $conn->prepare("DELETE FROM songs WHERE youtube_link=? AND `SpielID` = ? LIMIT 1");
+      $queryDelete = $conn->prepare("UPDATE songs SET wasViewed=1  WHERE youtube_link=? AND `SpielID` = ?");
       $queryDelete->bind_param("ss",$row['youtube_link'],$_SESSION['SpielID']);
       $queryDelete->execute();
       
@@ -73,7 +74,7 @@ if(isset($_POST['next']) && $_POST['next'] == "yes"){
             <button class="pure-button pure-button-primary" name="next" type="submit" value="yes">Nächster Link</button>
         </form>
         <?php
-          $query = $conn->prepare("SELECT COUNT(*) FROM songs WHERE `SpielID` = ?");
+          $query = $conn->prepare("SELECT COUNT(*) FROM songs WHERE `SpielID` = ? and wasViewed = 0");
           $query->bind_param("s",$_SESSION['SpielID']);
           $query->execute();
           $result = $query->get_result();
@@ -86,8 +87,13 @@ if(isset($_POST['next']) && $_POST['next'] == "yes"){
             }
           }
           $conn->close();
-        ?>
-        <p> Aktuelles Spiel: <strong><?php print($_SESSION['SpielID'])?></strong></p>
+
+
+       if(isset($_SESSION['isHost']) && !$_SESSION['isHost']){
+        echo "<p>Spiel: <b>{$_SESSION['SpielID']}</b> - Rolle: <b>Teilnehmer</b></p>";
+      } else {
+        echo "<p>Spiel: <b>{$_SESSION['SpielID']}</b> - Rolle: <b>Gastgeber</b></p>";
+      }?>
   </div>
   </body>
 </html>

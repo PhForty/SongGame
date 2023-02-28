@@ -16,7 +16,6 @@ Dann im Browser https://localhost öffnen
 * Datenbank aufsetzen (Mit passendem User und Namen, s. `db-connect.php`)
 
 # Todos
-* [ ] Output Liste am Ende von allen Links
 * [ ] Player controls: Automatic pauses and duration for playing
 * [ ] Spotify Embedded Player?
 * [ ] Togglebarer Nachtmodus
