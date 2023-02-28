@@ -57,6 +57,7 @@ else if(isset($_POST['SpielID']) && strlen($_POST['SpielID']) == 5){
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="favicon.ico">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/base-min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-fork-ribbon-css/0.2.3/gh-fork-ribbon.min.css" />
     <link rel="stylesheet" type="text/css" href="pure-min.css" media="screen" />
     <link rel="stylesheet" type="text/css" href="style.css" media="screen" />

@@ -11,3 +11,18 @@ for (i = 0; i < coll.length; i++) {
     }
   });
 }
+
+if(document.getElementById("lostopftext")){
+  var lostopf = document.getElementById("lostopftext");
+  var myCanvas = document.createElement('canvas');
+  myCanvas.height = 300;
+  lostopf.prepend(myCanvas);
+  var myConfetti = confetti.create(myCanvas, {});
+  myConfetti({
+    // any options from the global confetti function
+    gravity: 2
+  });
+  setTimeout(() => {
+    myConfetti.reset();
+  }, 1200);
+}
