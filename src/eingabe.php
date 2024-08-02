@@ -1,17 +1,48 @@
 <?php
+$cookieParams = session_get_cookie_params();
+session_set_cookie_params(
+    86400,
+    $cookieParams["path"],
+    $cookieParams["domain"],
+    true, // HttpOnly flag
+    true, // Secure flag
+);
 session_start();
 include 'db-connect.php';
 
-if(!isset($_SESSION['StartedGame']) || (isset($_SESION['StartedGame']) && $_SESSION['StartedGame'] === 0)) {
+if(!isset($_SESSION['StartedGame']) || (isset($_SESSION['StartedGame']) && $_SESSION['StartedGame'] === 0)) {
   header('Location: index');
+  exit; 
 }
 
+//Enter song, if provided in POST Request
 if(isset($_POST['link']) && !empty($_POST['link'])){
+  //Check whether this person already entered this song
   $link = $_POST['link'];
-  $query = $conn->prepare("INSERT INTO songs (youtube_link, SpielID) VALUES (?, ?)");
-  $query->bind_param("ss",$link, $_SESSION['SpielID']);
+  $query = $conn->prepare("SELECT * FROM songs WHERE `youtube_link` = ? AND `SpielID` = ? AND `personalsession` = ?");
+  $query->bind_param("sss",$link, $_SESSION['SpielID'], session_id());
   $query->execute();
+  $result = $query->get_result();
+  if ($result->num_rows > 0) {
+      //Song was already added by this person
+      $songalreadyadded=true;
+  } else {
+      //This person didnt add the song yet. Continue to insert song into database
+      $link = $_POST['link'];
+      $query = $conn->prepare("INSERT INTO songs (youtube_link, SpielID, personalsession) VALUES (?, ?, ?)");
+      $query->bind_param("sss",$link, $_SESSION['SpielID'], session_id());
+      $query->execute();
+  }
+  // Close the statement
+  $query->close();
 }
+
+//Get number of personal submitted songs
+$query = $conn->prepare("SELECT * FROM songs WHERE`personalsession` = ?");
+$query->bind_param("s",session_id());
+$query->execute();
+$result = $query->get_result();
+$numberofpersonalsongs = $result->num_rows;
 
 if(isset($_POST['WerdeHost'])){
   //Check if host is actually 0 (to prevent replay attacks)
@@ -83,13 +114,17 @@ if(isset($_POST['WerdeHost'])){
             echo "<p>Spiel: <b>{$_SESSION['SpielID']}</b> - Rolle: <b>Gastgeber</b></p>";
           }
         ?>
-        <form action="eingabe" class="pure-form pure-form-stacked" method="post">
+        <form action="eingabe" class="pure-form pure-form-stacked" method="post"  autocomplete="off">
             <input autofocus type="text" id="link" name="link" placeholder="Youtube-Link">
             <button class="pure-button pure-button-primary" type="submit" id="AbschickenButton" value="Submit">Abschicken</button>
         </form>
         <?php 
           if(isset($_POST['link']) && !empty($_POST['link'])){
-            echo "<div id='lostopftext'> <p>Der Link ist jetzt im Lostopf! </p></div>";
+            if($songalreadyadded){
+              echo "<div> <p id='doublelink'>Du hast diesen Song bereits abgegeben. Doppelte werden nicht unterstützt.</p></div>";
+            } else {
+              echo "<div id='lostopftext'> <p>Der Link ist jetzt im Lostopf!</p></div>";
+            }
           }
           $query = $conn->prepare("SELECT COUNT(*) FROM songs WHERE `SpielID` = ?");
           $query->bind_param("s",$_SESSION['SpielID']);
@@ -98,7 +133,7 @@ if(isset($_POST['WerdeHost'])){
           if($result!==false){
             $row = $result->fetch_assoc();
             if($row['COUNT(*)']!=0){
-              echo "<p>Lieder im Lostopf: ".$row['COUNT(*)']."</p>";
+              echo "<p>Lieder im Lostopf: ".$row['COUNT(*)'].". Davon von dir: $numberofpersonalsongs</p>";
             }else {
               echo "<p>Noch hat niemand ein Lied abgegeben.</p>";
             }

@@ -1,10 +1,19 @@
 <?php
+$cookieParams = session_get_cookie_params();
+session_set_cookie_params(
+    86400,
+    $cookieParams["path"],
+    $cookieParams["domain"],
+    true, // HttpOnly flag
+    true, // Secure flag
+);
 session_start();
 include 'db-connect.php';
 
 if(!isset($_SESSION['StartedGame']) || (isset($_SESSION['StartedGame']) && $_SESSION['StartedGame'] === 0) || (isset($_SESSION['isHost']) && !$_SESSION['isHost'])) {
     header('Location: eingabe');
-  }
+    exit;
+}
 
 if(isset($_POST['deleteAll']) && $_POST['deleteAll'] == "yes"){
     $query = $conn->prepare("DELETE FROM songs WHERE `SpielID` = ?");

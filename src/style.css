@@ -51,6 +51,9 @@ iframe {
     background: rgb(202, 60, 60);
 }
 
+#doublelink {
+        background-color: #ed5a5a;
+}
 #videocontainer {
     position: relative; 
     padding-bottom: 56.25%; 
@@ -122,4 +125,5 @@ canvas {
     left: 50%;/* move the canvas horizontally to the center */
     top: 10%;
     transform: translateX(-50%); /* adjust the horizontal position to center the canvas */
+    pointer-events:none;
 }

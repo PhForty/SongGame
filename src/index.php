@@ -1,9 +1,19 @@
 <?php
+$cookieParams = session_get_cookie_params();
+session_set_cookie_params(
+    86400,
+    $cookieParams["path"],
+    $cookieParams["domain"],
+    true, // HttpOnly flag
+    true, // Secure flag
+);
 session_start();
+
 include 'db-connect.php';
 
 if(isset($_SESSION['SpielID']) && isset($_SESSION["StartedGame"])){
     header("Location: eingabe", true, 301);
+    exit;
 }
 else if(isset($_POST['SpielID']) && strlen($_POST['SpielID']) == 5){
     //Pruefe auf Existenz SpielID in Datenbank
@@ -21,6 +31,7 @@ else if(isset($_POST['SpielID']) && strlen($_POST['SpielID']) == 5){
         $_SESSION["StartedGame"] = "yes";
         $_SESSION["isHost"] = false;
         header("Location: eingabe", true, 301);
+        exit;
     } else {
         //Evt. Fehlermeldung anzeigen?
     }
@@ -49,6 +60,7 @@ else if(isset($_POST['SpielID']) && strlen($_POST['SpielID']) == 5){
     $conn->close();
     //Redirect to eingabe
     header("Location: eingabe", true, 301);
+    exit;
 }
 ?>
 <!DOCTYPE html>
