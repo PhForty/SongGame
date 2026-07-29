@@ -1,98 +1,67 @@
 <?php
-$cookieParams = session_get_cookie_params();
-session_set_cookie_params(
-    86400,
-    $cookieParams["path"],
-    $cookieParams["domain"],
-    true, // HttpOnly flag
-    true, // Secure flag
-);
-session_start();
+require_once 'bootstrap.php';
 
-include 'db-connect.php';
-
-if(isset($_SESSION['SpielID']) && isset($_SESSION["StartedGame"])){
-    header("Location: eingabe", true, 301);
-    exit;
-}
-else if(isset($_POST['SpielID']) && strlen($_POST['SpielID']) == 5){
-    //Pruefe auf Existenz SpielID in Datenbank
-    $query = $conn->prepare("SELECT * FROM session WHERE `SpielID` = ?");
-    $UpperSpielID = strtoupper($_POST['SpielID']);
-    $query->bind_param("s",$UpperSpielID);
-    $query->execute();
-    $result = $query->get_result();
-    $data = $result->fetch_all(MYSQLI_ASSOC);
-
-
-    if (count($data) >= 1) {
-        //Setze Sessionvariablen und leite weiter zu eingabe
-        $_SESSION["SpielID"] = strtoupper($_POST['SpielID']);
-        $_SESSION["StartedGame"] = "yes";
-        $_SESSION["isHost"] = false;
-        header("Location: eingabe", true, 301);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['join'])) {
+        $code = strtoupper(trim($_POST['game_code']));
+        $game = $db->fetchOne("SELECT id, is_host_active FROM sessions WHERE game_code = ?", [$code]);
+        if ($game) {
+            Auth::login($code, session_id());
+            if (!$game['is_host_active']) {
+                Auth::setAsHost();
+                $db->execute("UPDATE sessions SET is_host_active = 1 WHERE id = ?", [$game['id']]);
+            }
+            header("Location: eingabe.php");
+            exit;
+        } else {
+            header("Location: index.php?error=" . urlencode(__('invalid_code')));
+            exit;
+        }
+    } elseif (isset($_POST['create'])) {
+        $code = strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 5));
+        $db->execute("INSERT INTO sessions (game_code, is_host_active) VALUES (?, ?)", [$code, 1]);
+        Auth::login($code, session_id());
+        Auth::setAsHost();
+        header("Location: eingabe.php");
         exit;
-    } else {
-        //Evt. Fehlermeldung anzeigen?
     }
-} else if (isset($_POST['NeuesSpiel']) && $_POST['NeuesSpiel']=='NeuesSpiel'){
-    //Generate unique ID und setze sie
-    $validSpielIDFound=false;
-    do {
-        $seed = str_split('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
-        $rand = '';
-        foreach (array_rand($seed, 5) as $k) $rand .= $seed[$k];
-        $query = $conn->prepare("SELECT * FROM session WHERE SpielID = ?");
-        $query->bind_param("s",$rand);
-        $query->execute();
-        $result = $query->get_result();
-        if ($result->num_rows == 0) {$validSpielIDFound=true;}
-    } while (!$validSpielIDFound);
-    
-    $_SESSION["SpielID"] = $rand;
-    $_SESSION["StartedGame"] = "yes";
-    $_SESSION["isHost"] = true;
-    $isHost=1;
-
-    $query = $conn->prepare("INSERT INTO session (SpielID, hasHost) VALUES (?, ?)");
-    $query->bind_param("si",$rand,$isHost);
-    $query->execute();
-    $conn->close();
-    //Redirect to eingabe
-    header("Location: eingabe", true, 301);
-    exit;
 }
 ?>
 <!DOCTYPE html>
-<html lang="de">
-  <head>
-    <meta charset="utf-8">
+<html lang="<?php echo $_SESSION['lang']; ?>">
+<head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="favicon.ico">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/base-min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-fork-ribbon-css/0.2.3/gh-fork-ribbon.min.css" />
-    <link rel="stylesheet" type="text/css" href="pure-min.css" media="screen" />
-    <link rel="stylesheet" type="text/css" href="style.css" media="screen" />
-    <title>Startseite</title>
-  </head>
-  <body>
-  <div id="wrapper">
-    <main>
-        <form id="indexfirstform" action="index" class="pure-form" method="post">
-            <fieldset>
-                <input type="text" name="SpielID" id="SpielID" placeholder="ABCDE"/>
-                <button class="pure-button pure-button-primary" id="SpielBeitretenButton" type="submit" value="SpielBeitreten">Spiel beitreten</button>
-            </fieldset>
-        </form>
-        <hr>
-        <form id="NeuesSpielForm" action="index" class="pure-form" method="post">
-            <button class="pure-button pure-button-primary pure-u-3-8" type="submit" value="NeuesSpiel" name="NeuesSpiel">Neues Spiel</button>
-        </form>
-    </main>
-    <a class="github-fork-ribbon left-bottom pure-u-1-2" href="https://github.com/PhForty/SongGame" data-ribbon="Fork me on GitHub" title="Fork me on GitHub">
-            Fork me on GitHub 
-        </a>   
+    <title><?php echo __('title_join'); ?></title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="wrapper">
+        <div class="lang-toggle" style="text-align: right; margin-bottom: 1rem;">
+            <a href="?lang=de" style="<?php echo $_SESSION['lang'] === 'de' ? 'font-weight: bold;' : ''; ?>">🇩🇪</a> | 
+            <a href="?lang=en" style="<?php echo $_SESSION['lang'] === 'en' ? 'font-weight: bold;' : ''; ?>">🇺🇸</a>
+        </div>
+        <div class="card">
+            <h1>🎵 SongGame</h1>
+            <p><?php echo __('welcome'); ?></p>
+            
+            <?php if (isset($_GET['error'])): ?>
+                <p style="color: red;"><?php echo htmlspecialchars($_GET['error']); ?></p>
+            <?php endif; ?>
 
+            <form method="POST" style="margin-bottom: 2rem;">
+                <div class="form-group">
+                    <input type="text" name="game_code" placeholder="<?php echo __('enter_code'); ?>" maxlength="10" required>
+                </div>
+                <button type="submit" name="join" class="btn btn-primary"><?php echo __('join_game'); ?></button>
+            </form>
+
+            <div style="margin: 1rem 0; color: #888; text-align: center;"><?php echo __('or'); ?></div>
+
+            <form method="POST">
+                <button type="submit" name="create" class="btn btn-secondary"><?php echo __('create_game'); ?></button>
+            </form>
+        </div>
     </div>
-  </body>
+</body>
 </html>

@@ -1,24 +1,12 @@
 <?php
-$cookieParams = session_get_cookie_params();
-session_set_cookie_params(
-    86400,
-    $cookieParams["path"],
-    $cookieParams["domain"],
-    true, // HttpOnly flag
-    true, // Secure flag
-);
-session_start();
-include 'db-connect.php';
+require_once 'bootstrap.php';
 
-//Wenn der Host das Spiel verlaesst wird das vermerkt, sodass Teilnehmer Host werden koennen
-if(isset($_SESSION['isHost']) && $_SESSION['isHost']){
-    $query = $conn->prepare("UPDATE session SET hasHost=0 WHERE SpielID = ?");
-    $query->bind_param("s",$_SESSION['SpielID']);
-    $query->execute();
-    $conn->close();
+// If the admin is logging out, mark the session as having no active host
+if (Auth::isAuthenticated() && Auth::isAdmin()) {
+    $game = $db->fetchOne("SELECT id FROM sessions WHERE game_code = ?", [$_SESSION['game_code']]);
+    if ($game) {
+        $db->execute("UPDATE sessions SET is_host_active = 0 WHERE id = ?", [$game['id']]);
+    }
 }
 
-session_destroy();
-header('Location: index');
-exit;
-?>
+Auth::logout();

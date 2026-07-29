@@ -10,7 +10,7 @@ services:
   database:
     image: mariadb
     volumes: 
-      - ./song_game.sql:/docker-entrypoint-initdb.d/song_game.sql
+      - ./src/schema.sql:/docker-entrypoint-initdb.d/song_game.sql
     environment:
       MARIADB_ROOT_PASSWORD: wrjkn422
       MARIADB_DATABASE: song_game

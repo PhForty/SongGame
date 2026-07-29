@@ -1,154 +1,134 @@
 <?php
-$cookieParams = session_get_cookie_params();
-session_set_cookie_params(
-    86400,
-    $cookieParams["path"],
-    $cookieParams["domain"],
-    true, // HttpOnly flag
-    true, // Secure flag
-);
-session_start();
-include 'db-connect.php';
+require_once 'bootstrap.php';
+Auth::requireAuth($db);
 
-if(!isset($_SESSION['StartedGame']) || (isset($_SESSION['StartedGame']) && $_SESSION['StartedGame'] === 0)) {
-  header('Location: index');
-  exit; 
+$userId = $_SESSION['user_id'];
+$gameCode = $_SESSION['game_code'];
+$game = $db->fetchOne("SELECT * FROM sessions WHERE game_code = ?", [$gameCode]);
+$sessionId = $game['id'];
+
+$message = "";
+$messageType = ""; // success or error
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_song'])) {
+    $url    = trim($_POST['song_url']);
+    $parsed = YouTubeService::parseYouTubeUrl($url);
+    $videoId = $parsed ? $parsed['video_id'] : null;
+    $startOffset = $parsed ? $parsed['start_offset'] : 0;
+
+    if (!$videoId) {
+        $message = __('invalid_url');
+        $messageType = "error";
+    } else {
+        // Check if already submitted by this user in this game
+        $existing = $db->fetchOne("SELECT id FROM songs WHERE session_id = ? AND user_id = ? AND video_id = ?", [$sessionId, $userId, $videoId]);
+
+        if ($existing) {
+            $message = __('already_submitted');
+            $messageType = "error";
+        } else {
+            // Get titles via API if possible (optional but nice for the dropdown/admin view)
+            $yt = new YouTubeService(YT_API_KEY);
+            $details = $yt->getVideoDetails($videoId);
+            $title = $details ? $details['title'] : "Unknown Title";
+
+            $db->execute("INSERT INTO songs (session_id, user_id, video_id, start_offset, title) VALUES (?, ?, ?, ?, ?)", [$sessionId, $userId, $videoId, $startOffset, $title]);
+            $message = __('song_added');
+            $messageType = "success";
+        }
+    }
 }
 
-//Enter song, if provided in POST Request
-if(isset($_POST['link']) && !empty($_POST['link'])){
-  //Check whether this person already entered this song
-  $link = $_POST['link'];
-  $query = $conn->prepare("SELECT * FROM songs WHERE `youtube_link` = ? AND `SpielID` = ? AND `personalsession` = ?");
-  $query->bind_param("sss",$link, $_SESSION['SpielID'], session_id());
-  $query->execute();
-  $result = $query->get_result();
-  if ($result->num_rows > 0) {
-      //Song was already added by this person
-      $songalreadyadded=true;
-  } else {
-      //This person didnt add the song yet. Continue to insert song into database
-      $link = $_POST['link'];
-      $query = $conn->prepare("INSERT INTO songs (youtube_link, SpielID, personalsession) VALUES (?, ?, ?)");
-      $query->bind_param("sss",$link, $_SESSION['SpielID'], session_id());
-      $query->execute();
-  }
-  // Close the statement
-  $query->close();
-}
-
-//Get number of personal submitted songs
-$query = $conn->prepare("SELECT * FROM songs WHERE`personalsession` = ?");
-$query->bind_param("s",session_id());
-$query->execute();
-$result = $query->get_result();
-$numberofpersonalsongs = $result->num_rows;
-
-if(isset($_POST['WerdeHost'])){
-  //Check if host is actually 0 (to prevent replay attacks)
-  $query = $conn->prepare("SELECT hasHost FROM session WHERE `SpielID` = ?");
-  $query->bind_param("s",$_SESSION['SpielID']);
-  $query->execute();
-  $result = $query->get_result();
-  $row = $result->fetch_assoc();
-  if($row['hasHost']==0) {
-    //Set all vars and refresh page
-    $_SESSION["isHost"] = true;
-
-    $query = $conn->prepare("UPDATE session SET hasHost=1 WHERE SpielID = ?");
-    $query->bind_param("s",$_SESSION['SpielID']);
-    $query->execute();
-    $conn->close();
-
-    header("Refresh:0");
-  }
-}
+// Get songs submitted by current user for the dropdown
+$mySongs = $db->fetchAll("SELECT video_id, title FROM songs WHERE session_id = ? AND user_id = ?", [$sessionId, $userId]);
 ?>
 <!DOCTYPE html>
-<html lang="de">
-  <head>
-    <meta charset="utf-8">
+<html lang="<?php echo $_SESSION['lang']; ?>">
+<head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="favicon.ico">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/base-min.css">
-    <link rel="stylesheet" type="text/css" href="pure-min.css" media="screen" />
-    <link rel="stylesheet" type="text/css" href="style.css" media="screen" />
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-    <title>Eingabe</title>
-  </head>
-  <body>
-  <div id="wrapper">
-    <header>
-        <nav class="pure-menu pure-menu-horizontal">
-          <ul class="pure-menu-list">
-            <?php
-            if(isset($_SESSION['isHost']) && $_SESSION['isHost']){
-              echo "<li class='pure-menu-item'>";
-              echo "<a class='pure-menu-link' href='eingabe'>Eingabe</a></li>";
-              echo "<li class='pure-menu-item'>";
-              echo "<a class='pure-menu-link' href='viewer'>Spiel</a></li>";
-              echo "<li class='pure-menu-item'>";
-              echo "<a class='pure-menu-link' href='admin-view'>Admin-View</a></li>";
-            }
-            ?>
-            <li class="pure-menu-item">
-            <a class="pure-menu-link" href="logout">Logout</a></li>
-          </ul>
-        </nav>
-      </header>
-    <main>
-        <?php 
-          if(isset($_SESSION['isHost']) && !$_SESSION['isHost']){
-            echo "<p>Spiel: <b>{$_SESSION['SpielID']}</b> - Rolle: <b>Teilnehmer</b></p>";
-            $query = $conn->prepare("SELECT hasHost FROM session WHERE `SpielID` = ?");
-            $query->bind_param("s",$_SESSION['SpielID']);
-            $query->execute();
-            $result = $query->get_result();
-            $row = $result->fetch_assoc();
-            if($row['hasHost']==0) {
-              echo "<form id='WerdeHost' action='eingabe' class='pure-form' method='post'>";
-              echo "<button class='pure-button pure-button-primary pure-u-3-8' type='submit' value='WerdeHost' name='WerdeHost'>Werde Host</button>";
-              echo "</form><br><br>";
-            }
-          } else {
-            echo "<p>Spiel: <b>{$_SESSION['SpielID']}</b> - Rolle: <b>Gastgeber</b></p>";
-          }
-        ?>
-        <form action="eingabe" class="pure-form pure-form-stacked" method="post"  autocomplete="off">
-            <input autofocus type="text" id="link" name="link" placeholder="Youtube-Link">
-            <button class="pure-button pure-button-primary" type="submit" id="AbschickenButton" value="Submit">Abschicken</button>
-        </form>
-        <?php 
-          if(isset($_POST['link']) && !empty($_POST['link'])){
-            if($songalreadyadded){
-              echo "<div> <p id='doublelink'>Du hast diesen Song bereits abgegeben. Doppelte werden nicht unterstützt.</p></div>";
-            } else {
-              echo "<div id='lostopftext'> <p>Der Link ist jetzt im Lostopf!</p></div>";
-            }
-          }
-          $query = $conn->prepare("SELECT COUNT(*) FROM songs WHERE `SpielID` = ?");
-          $query->bind_param("s",$_SESSION['SpielID']);
-          $query->execute();
-          $result = $query->get_result();
-          if($result!==false){
-            $row = $result->fetch_assoc();
-            if($row['COUNT(*)']!=0){
-              echo "<p>Lieder im Lostopf: ".$row['COUNT(*)'].". Davon von dir: $numberofpersonalsongs</p>";
-            }else {
-              echo "<p>Noch hat niemand ein Lied abgegeben.</p>";
-            }
-          }
-          $conn->close();
-        ?>
-        <h3>Ablauf</h3>
-        <ol>
-          <li>Alle können Youtube-Links in den gemeinsamen Topf abgeben</li>
-          <li>Der Gastgeber startet das Spiel</li>
-          <li>Videos werden in zufälliger Reihenfolge gezeigt und nach dem Abspielen automatisch entfernt</li>
-          <li>Feedback gerne per <a href="mailto:contact@songgame.de">Mail</a> oder als <a href="https://github.com/PhForty/SongGame/issues">GitHub Issue</a></li>
-        </ol>
-    </main>
+    <title><?php echo __('title_submit'); ?></title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="wrapper">
+        <header>
+            <nav class="nav-menu">
+                <li><a href="eingabe.php"><?php echo __('nav_submit'); ?></a></li>
+                <?php if (Auth::isAdmin()): ?>
+                    <li><a href="admin-view.php"><?php echo __('nav_admin'); ?></a></li>
+                <?php endif; ?>
+                <li><a href="viewer.php"><?php echo __('nav_game'); ?></a></li>
+                <li><a href="logout.php" class="btn-secondary"><?php echo __('nav_logout'); ?></a></li>
+            </nav>
+            <div class="lang-switch" style="display: inline-block; margin-left: 10px;">
+                <a href="?lang=de" style="<?php echo $_SESSION['lang'] === 'de' ? 'font-weight: bold;' : ''; ?>">🇩🇪</a> | 
+                <a href="?lang=en" style="<?php echo $_SESSION['lang'] === 'en' ? 'font-weight: bold;' : ''; ?>">🇺🇸</a>
+            </div>
+            <button id="themeToggle" class="theme-toggle">🌙</button>
+        </header>
+
+        <div class="card">
+            <h1>🎵 <?php echo __('submit_song'); ?></h1>
+            <p><?php echo __('game_code'); ?>: <strong><?php echo htmlspecialchars($gameCode); ?></strong></p>
+
+            <?php if ($message): ?>
+                <p style="color: <?php echo $messageType === 'success' ? 'green' : 'red'; ?>; font-weight: bold;">
+                    <?php echo htmlspecialchars($message); ?>
+                </p>
+            <?php endif; ?>
+
+            <form method="POST">
+                <div class="form-group">
+                    <label for="song_url"><?php echo __('youtube_url'); ?></label>
+                    <input type="text" id="song_url" name="song_url" placeholder="https://www.youtube.com/watch?v=..." required>
+                </div>
+
+                <div class="form-group">
+                    <label for="my_songs"><?php echo __('my_songs'); ?></label>
+                    <select id="my_songs" name="my_songs">
+                        <option value="<?php echo __('see_added'); ?>"><?php echo __('see_added'); ?></option>
+                        <?php foreach ($mySongs as $song): ?>
+                            <option value="<?php echo htmlspecialchars($song['video_id']); ?>">
+                                <?php echo htmlspecialchars($song['title']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <button type="submit" name="submit_song" class="btn btn-primary"><?php echo __('add_to_pot'); ?></button>
+            </form>
+
+            <div style="margin-top: 2rem; text-align: left; font-size: 0.9rem; color: #666;">
+                <h3><?php echo __('how_it_works'); ?></h3>
+                <ol>
+                    <li><?php echo __('step1'); ?></li>
+                    <li><?php echo __('step2'); ?></li>
+                    <li><?php echo __('step3'); ?></li>
+                </ol>
+            </div>
+        </div>
     </div>
-  </body>
-  <script src="utilities.js"></script>
+
+    <script>
+        const toggle = document.getElementById('themeToggle');
+        toggle.addEventListener('click', () => {
+            const body = document.body;
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+                toggle.textContent = '🌙';
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+                toggle.textContent = '☀️';
+            }
+        });
+
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.setAttribute('data-theme', 'dark');
+            toggle.textContent = '☀️';
+        }
+    </script>
+</body>
 </html>
