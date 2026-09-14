@@ -1,7 +1,13 @@
 IndexIgnore # Prevent directory listing
 
 # Block access to sensitive files
-<FilesMatch "\.(log|sql|md)$">
+<FilesMatch "\.(log|sql|md|json|ya?ml)$">
+    Require all denied
+</FilesMatch>
+
+# Credentials written by the deploy pipeline. PHP never serves these as source,
+# but if the PHP handler ever fails they would be readable as plain text.
+<FilesMatch "^config\.local\.php$">
     Require all denied
 </FilesMatch>
 

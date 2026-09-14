@@ -8,23 +8,41 @@ ini_set('display_errors', '0');
 ini_set('display_startup_errors', '0');
 error_reporting(E_ALL);
 
-// Database configuration
-define('DB_HOST', 'database');
-define('DB_USER', 'root');
-define('DB_PASS', 'wrjkn422');
-define('DB_NAME', 'song_game');
+/*
+ * Production credentials live in config.local.php, which the deploy pipeline
+ * generates from GitHub secrets and uploads alongside the source. It is
+ * gitignored, so nothing below ever has to hold a real secret. When the file is
+ * absent — a plain `docker-compose up` checkout — the defaults keep working.
+ */
+$sgLocal  = __DIR__ . '/config.local.php';
+$sgConfig = is_file($sgLocal) ? require $sgLocal : [];
+if (!is_array($sgConfig)) {
+    $sgConfig = [];
+}
 
-// YouTube API configuration
-// Note: Creating playlists requires OAuth2 access tokens. 
-// For a simple rewrite, we'll store the token and refresh token here or in DB.
-// Optional. Without a valid key SongGame falls back to YouTube's oEmbed
-// endpoint, which supplies video titles without any key; the key only adds the
-// authoritative "is this video embeddable" flag. Creating playlists still needs
-// the OAuth2 client below.
-define('YT_API_KEY', '...');
-define('YT_CLIENT_ID', '...');
-define('YT_CLIENT_SECRET', '...');
+$sgConfig += [
+    // docker-compose defaults; see docker-compose.yml
+    'DB_HOST'          => 'database',
+    'DB_USER'          => 'root',
+    'DB_PASS'          => 'wrjkn422',
+    'DB_NAME'          => 'song_game',
+
+    // YouTube API configuration.
+    // Optional. Without a valid key SongGame falls back to YouTube's oEmbed
+    // endpoint, which supplies video titles without any key; the key only adds
+    // the authoritative "is this video embeddable" flag. Creating playlists
+    // still needs the OAuth2 client below.
+    'YT_API_KEY'       => '...',
+    'YT_CLIENT_ID'     => '...',
+    'YT_CLIENT_SECRET' => '...',
+];
+
+foreach (['DB_HOST', 'DB_USER', 'DB_PASS', 'DB_NAME',
+          'YT_API_KEY', 'YT_CLIENT_ID', 'YT_CLIENT_SECRET'] as $sgKey) {
+    // An empty secret means "not configured" — fall back rather than define ''.
+    define($sgKey, $sgConfig[$sgKey] !== '' ? $sgConfig[$sgKey] : '...');
+}
+unset($sgLocal, $sgConfig, $sgKey);
 
 // General settings
 define('SESSION_LIFETIME', 86400);
-?>
