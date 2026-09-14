@@ -48,3 +48,4 @@ CREATE TABLE IF NOT EXISTS `app_config` (
 -- Keeps Migrations.php from re-running steps already covered by this file.
 INSERT INTO `app_config` (`key`, `value`) VALUES ('schema_version', '1')
   ON DUPLICATE KEY UPDATE `value` = VALUES(`value`);
+
