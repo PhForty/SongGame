@@ -9,6 +9,7 @@ $sessionId = $game['id'];
 
 $message = "";
 $messageType = ""; // success or error
+$hint = "";        // non-blocking note shown under the message
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_song'])) {
     $url    = trim($_POST['song_url']);
@@ -27,108 +28,112 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_song'])) {
             $message = __('already_submitted');
             $messageType = "error";
         } else {
-            // Get titles via API if possible (optional but nice for the dropdown/admin view)
+            // Look up the title (Data API when configured, otherwise oEmbed).
             $yt = new YouTubeService(YT_API_KEY);
             $details = $yt->getVideoDetails($videoId);
-            $title = $details ? $details['title'] : "Unknown Title";
+            // Leave it null when unknown so a later page load can fill it in.
+            $title = $details && !empty($details['title']) ? $details['title'] : null;
+            // Unknown videos stay playable by default; only a definite "no" blocks the embed.
+            $embeddable = $details ? (int)$details['embeddable'] : 1;
 
-            $db->execute("INSERT INTO songs (session_id, user_id, video_id, start_offset, title) VALUES (?, ?, ?, ?, ?)", [$sessionId, $userId, $videoId, $startOffset, $title]);
+            $db->execute(
+                "INSERT INTO songs (session_id, user_id, video_id, start_offset, title, embeddable) VALUES (?, ?, ?, ?, ?, ?)",
+                [$sessionId, $userId, $videoId, $startOffset, $title, $embeddable]
+            );
             $message = __('song_added');
             $messageType = "success";
+            if (!$embeddable) {
+                $hint = __('not_embeddable_hint');
+            }
         }
     }
 }
 
-// Get songs submitted by current user for the dropdown
-$mySongs = $db->fetchAll("SELECT video_id, title FROM songs WHERE session_id = ? AND user_id = ?", [$sessionId, $userId]);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_song'])) {
+    // Scoped to this player and this game, so nobody can delete someone else's pick.
+    $removed = $db->execute(
+        "DELETE FROM songs WHERE id = ? AND session_id = ? AND user_id = ?",
+        [(int)$_POST['delete_song'], $sessionId, $userId]
+    );
+    $message = $removed ? __('song_deleted') : __('song_delete_failed');
+    $messageType = $removed ? 'success' : 'error';
+}
+
+// Everything this player put into the pot, newest last.
+$mySongs = $db->fetchAll(
+    "SELECT id, video_id, title, start_offset, was_viewed, embeddable
+     FROM songs WHERE session_id = ? AND user_id = ? ORDER BY created_at ASC",
+    [$sessionId, $userId]
+);
+$mySongs = sg_repair_titles($db, $sessionId, $mySongs);
+
+sg_page_start(__('title_submit'));
 ?>
-<!DOCTYPE html>
-<html lang="<?php echo $_SESSION['lang']; ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo __('title_submit'); ?></title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
     <div id="wrapper">
-        <header>
-            <nav class="nav-menu">
-                <li><a href="eingabe.php"><?php echo __('nav_submit'); ?></a></li>
-                <?php if (Auth::isAdmin()): ?>
-                    <li><a href="admin-view.php"><?php echo __('nav_admin'); ?></a></li>
-                <?php endif; ?>
-                <li><a href="viewer.php"><?php echo __('nav_game'); ?></a></li>
-                <li><a href="logout.php" class="btn-secondary"><?php echo __('nav_logout'); ?></a></li>
-            </nav>
-            <div class="lang-switch" style="display: inline-block; margin-left: 10px;">
-                <a href="?lang=de" style="<?php echo $_SESSION['lang'] === 'de' ? 'font-weight: bold;' : ''; ?>">🇩🇪</a> | 
-                <a href="?lang=en" style="<?php echo $_SESSION['lang'] === 'en' ? 'font-weight: bold;' : ''; ?>">🇺🇸</a>
-            </div>
-            <button id="themeToggle" class="theme-toggle">🌙</button>
-        </header>
+        <?php sg_header('submit', Auth::isAdmin()); ?>
 
         <div class="card">
-            <h1>🎵 <?php echo __('submit_song'); ?></h1>
-            <p><?php echo __('game_code'); ?>: <strong><?php echo htmlspecialchars($gameCode); ?></strong></p>
+            <h1>&#127925; <?= __('submit_song') ?></h1>
+            <p><?= __('game_code') ?>: <strong><?= htmlspecialchars($gameCode) ?></strong></p>
 
             <?php if ($message): ?>
-                <p style="color: <?php echo $messageType === 'success' ? 'green' : 'red'; ?>; font-weight: bold;">
-                    <?php echo htmlspecialchars($message); ?>
+                <p class="<?= $messageType === 'success' ? 'msg-ok' : 'msg-error' ?>">
+                    <?= htmlspecialchars($message) ?>
                 </p>
+            <?php endif; ?>
+            <?php if ($hint): ?>
+                <p class="muted"><?= htmlspecialchars($hint) ?></p>
             <?php endif; ?>
 
             <form method="POST">
                 <div class="form-group">
-                    <label for="song_url"><?php echo __('youtube_url'); ?></label>
-                    <input type="text" id="song_url" name="song_url" placeholder="https://www.youtube.com/watch?v=..." required>
+                    <label for="song_url"><?= __('youtube_url') ?></label>
+                    <input type="text" id="song_url" name="song_url"
+                           placeholder="https://www.youtube.com/watch?v=..." required autocomplete="off">
                 </div>
-
-                <div class="form-group">
-                    <label for="my_songs"><?php echo __('my_songs'); ?></label>
-                    <select id="my_songs" name="my_songs">
-                        <option value="<?php echo __('see_added'); ?>"><?php echo __('see_added'); ?></option>
-                        <?php foreach ($mySongs as $song): ?>
-                            <option value="<?php echo htmlspecialchars($song['video_id']); ?>">
-                                <?php echo htmlspecialchars($song['title']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <button type="submit" name="submit_song" class="btn btn-primary"><?php echo __('add_to_pot'); ?></button>
+                <button type="submit" name="submit_song" class="btn btn-primary"><?= __('add_to_pot') ?></button>
             </form>
 
-            <div style="margin-top: 2rem; text-align: left; font-size: 0.9rem; color: #666;">
-                <h3><?php echo __('how_it_works'); ?></h3>
+            <hr class="sep">
+
+            <h2 style="text-align: left;"><?= __('my_songs') ?> (<?= count($mySongs) ?>)</h2>
+            <?php if (!$mySongs): ?>
+                <p class="muted" style="text-align: left;"><?= __('my_songs_none') ?></p>
+            <?php else: ?>
+                <ul class="song-list">
+                    <?php foreach ($mySongs as $song): ?>
+                        <li>
+                            <img src="<?= htmlspecialchars(sg_thumb_url($song['video_id'])) ?>"
+                                 alt="" loading="lazy" width="80" height="45"
+                                 onerror="this.style.visibility='hidden'">
+                            <?php $label = sg_song_label($song); ?>
+                            <span class="song-title" title="<?= htmlspecialchars($label) ?>">
+                                <a href="<?= htmlspecialchars(sg_watch_url($song['video_id'], $song['start_offset'])) ?>"
+                                   target="_blank" rel="noopener"><?= htmlspecialchars($label) ?></a>
+                            </span>
+                            <?php if (!($song['embeddable'] ?? 1)): ?>
+                                <span class="badge badge-warn" title="<?= htmlspecialchars(__('cannot_play_hint')) ?>"><?= __('not_embeddable') ?></span>
+                            <?php endif; ?>
+                            <?php if ($song['was_viewed']): ?>
+                                <span class="badge"><?= __('already_played') ?></span>
+                            <?php endif; ?>
+                            <form method="POST" onsubmit="return confirm(<?= htmlspecialchars(json_encode(__('delete_confirm')), ENT_QUOTES) ?>);">
+                                <button type="submit" name="delete_song" value="<?= (int)$song['id'] ?>"
+                                        class="btn btn-danger btn-small"><?= __('delete_song') ?></button>
+                            </form>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+
+            <div style="margin-top: 2rem; text-align: left; font-size: 0.9rem;" class="muted">
+                <h3><?= __('how_it_works') ?></h3>
                 <ol>
-                    <li><?php echo __('step1'); ?></li>
-                    <li><?php echo __('step2'); ?></li>
-                    <li><?php echo __('step3'); ?></li>
+                    <li><?= __('step1') ?></li>
+                    <li><?= __('step2') ?></li>
+                    <li><?= __('step3') ?></li>
                 </ol>
             </div>
         </div>
     </div>
-
-    <script>
-        const toggle = document.getElementById('themeToggle');
-        toggle.addEventListener('click', () => {
-            const body = document.body;
-            if (body.getAttribute('data-theme') === 'dark') {
-                body.removeAttribute('data-theme');
-                localStorage.setItem('theme', 'light');
-                toggle.textContent = '🌙';
-            } else {
-                body.setAttribute('data-theme', 'dark');
-                localStorage.setItem('theme', 'dark');
-                toggle.textContent = '☀️';
-            }
-        });
-
-        if (localStorage.getItem('theme') === 'dark') {
-            document.body.setAttribute('data-theme', 'dark');
-            toggle.textContent = '☀️';
-        }
-    </script>
-</body>
-</html>
+<?php sg_page_end(); ?>

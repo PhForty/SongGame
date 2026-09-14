@@ -12,6 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
     $play  = max(5, min(600, (int)$_POST['play_duration']));
 
     $db->execute("UPDATE sessions SET autoplay = ?, pause_duration = ?, play_duration = ? WHERE id = ?", [$autoplay, $pause, $play, $sessionId]);
+    $game = $db->fetchOne("SELECT * FROM sessions WHERE game_code = ?", [$gameCode]);
     $message = __('settings_updated');
 }
 
@@ -91,130 +92,107 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_playlist'])) {
 }
 
 $songs = $db->fetchAll("SELECT * FROM songs WHERE session_id = ? ORDER BY created_at ASC", [$sessionId]);
-$yt = new YouTubeService(YT_API_KEY);
+$songs = sg_repair_titles($db, $sessionId, $songs);
 $hasOAuthToken = (bool)$db->fetchOne("SELECT `value` FROM app_config WHERE `key` = 'yt_refresh_token'");
 $oauthSuccess = isset($_GET['oauth']) && $_GET['oauth'] === 'success';
+
+sg_page_start(__('title_admin'));
 ?>
-<!DOCTYPE html>
-<html lang="<?php echo $_SESSION['lang']; ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo __('title_admin'); ?></title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body data-theme="dark"> <!-- Default admin to dark for contrast -->
     <div id="wrapper">
-        <header>
-            <nav class="nav-menu">
-                <li><a href="eingabe.php"><?php echo __('nav_submit'); ?></a></li>
-                <li><a href="admin-view.php" style="color: var(--accent-color);"><?php echo __('nav_admin'); ?></a></li>
-                <li><a href="viewer.php"><?php echo __('nav_game'); ?></a></li>
-                <li><a href="logout.php" class="btn-secondary"><?php echo __('nav_logout'); ?></a></li>
-            </nav>
-            <div class="lang-switch" style="display: inline-block; margin-left: 10px;">
-                <a href="?lang=de" style="<?php echo $_SESSION['lang'] === 'de' ? 'font-weight: bold;' : ''; ?>">🇩🇪</a> | 
-                <a href="?lang=en" style="<?php echo $_SESSION['lang'] === 'en' ? 'font-weight: bold;' : ''; ?>">🇺🇸</a>
-            </div>
-            <button id="themeToggle" class="theme-toggle">🌙</button>
-        </header>
+        <?php
+        ob_start();
+        sg_share_button();
+        sg_header('admin', true, ob_get_clean());
+        ?>
 
         <div class="card">
-            <h1>⚙️ <?php echo __('host_settings'); ?></h1>
-            
+            <h1>&#9881;&#65039; <?= __('host_settings') ?></h1>
+
             <?php if (isset($message)): ?>
-                <p style="color: <?= (($messageType ?? 'success') === 'error') ? '#e74c3c' : 'green' ?>; font-weight: bold;"><?php echo htmlspecialchars($message); ?></p>
+                <p class="<?= (($messageType ?? 'success') === 'error') ? 'msg-error' : 'msg-ok' ?>"><?= htmlspecialchars($message) ?></p>
             <?php endif; ?>
             <?php if ($oauthSuccess): ?>
-                <p style="color: green; font-weight: bold;">✅ <?= __('playlist_auth_success') ?></p>
+                <p class="msg-ok">&#9989; <?= __('playlist_auth_success') ?></p>
             <?php endif; ?>
 
-            <form method="POST" class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-                <div>
-                    <label>
-                        <input type="checkbox" name="autoplay" <?php echo $game['autoplay'] ? 'checked' : ''; ?>> <?php echo __('autoplay'); ?>
-                    </label>
-                    <br><br>
-                    <label><?php echo __('pause_duration'); ?></label>
-                    <input type="number" name="pause_duration" value="<?php echo $game['pause_duration']; ?>" min="0" max="300">
+            <form method="POST" class="settings-form">
+                <label class="settings-check">
+                    <input type="checkbox" name="autoplay" <?= $game['autoplay'] ? 'checked' : '' ?>> <?= __('autoplay') ?>
+                </label>
+                <div class="settings-grid">
+                    <div>
+                        <label for="pause_duration"><?= __('pause_duration') ?></label>
+                        <input type="number" id="pause_duration" name="pause_duration" value="<?= (int)$game['pause_duration'] ?>" min="0" max="300">
+                    </div>
+                    <div>
+                        <label for="play_duration"><?= __('play_duration') ?></label>
+                        <input type="number" id="play_duration" name="play_duration" value="<?= (int)$game['play_duration'] ?>" min="5" max="600">
+                    </div>
                 </div>
-                <div>
-                    <label><?php echo __('play_duration'); ?></label>
-                    <input type="number" name="play_duration" value="<?php echo $game['play_duration']; ?>" min="5" max="600">
-                    <br><br>
-                    <button type="submit" name="update_settings" class="btn btn-primary"><?php echo __('save_settings'); ?></button>
-                </div>
+                <button type="submit" name="update_settings" class="btn btn-primary"><?= __('save_settings') ?></button>
             </form>
 
-            <hr style="margin: 2rem 0; border: 0; border-top: 1px solid var(--border-color);">
+            <hr class="sep">
 
-            <h2>📦 <?php echo __('song_pot'); ?></h2>
-            <div class="song-grid">
-                <?php foreach ($songs as $song): ?>
-                    <div class="song-item">
-                        <?php 
-                            $details = $yt->getVideoDetails($song['video_id']);
-                            $thumb = $details ? $details['thumbnail'] : 'https://via.placeholder.com/120x90?text=No+Thumb';
-                            $title = $song['title'] ?? ($details ? $details['title'] : 'Unknown');
-                        ?>
-                        <img src="<?php echo htmlspecialchars($thumb); ?>" alt="Thumbnail">
-                        <div style="font-size: 0.8rem; margin-top: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                            <?php echo htmlspecialchars($title); ?>
+            <?php /* Closed by default: the host should not see the thumbnails
+                     (and spoil the game) just by opening the settings page. */ ?>
+            <details class="fold">
+                <summary>&#128230; <?= __('song_pot') ?> (<?= count($songs) ?>)</summary>
+                <div class="fold-body">
+                    <?php if (!$songs): ?>
+                        <p class="muted"><?= __('my_songs_none') ?></p>
+                    <?php else: ?>
+                        <div class="song-grid">
+                            <?php foreach ($songs as $song): ?>
+                                <div class="song-item">
+                                    <?php // Thumbnail URL is derived from the video id — no API quota spent per song. ?>
+                                    <img src="<?= htmlspecialchars(sg_thumb_url($song['video_id'])) ?>"
+                                         alt="" loading="lazy"
+                                         onerror="this.style.visibility='hidden'">
+                                    <?php $label = sg_song_label($song); ?>
+                                    <div class="song-title" title="<?= htmlspecialchars($label) ?>">
+                                        <?= htmlspecialchars($label) ?>
+                                    </div>
+                                    <?php if (!($song['embeddable'] ?? 1)): ?>
+                                        <span class="badge badge-warn" title="<?= htmlspecialchars(__('cannot_play_hint')) ?>"><?= __('not_embeddable') ?></span>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endforeach; ?>
                         </div>
+                    <?php endif; ?>
+
+                    <div style="margin-top: 1.5rem;">
+                        <form method="POST">
+                            <button type="submit" name="clear_songs" class="btn btn-danger"><?= __('clear_all') ?></button>
+                        </form>
                     </div>
-                <?php endforeach; ?>
-            </div>
+                </div>
+            </details>
 
-            <div style="margin-top: 2rem;">
-                <form method="POST">
-                    <button type="submit" name="clear_songs" class="btn btn-secondary" style="background: #d9534f;"><?php echo __('clear_all'); ?></button>
-                </form>
-            </div>
+            <hr class="sep">
 
-            <hr style="margin: 2rem 0; border: 0; border-top: 1px solid var(--border-color);">
-
-            <h2>🎵 <?= __('playlist_section') ?></h2>
+            <h2>&#127925; <?= __('playlist_section') ?></h2>
 
             <?php if ($game['playlist_id']): ?>
                 <?php $playlistUrl = 'https://www.youtube.com/playlist?list=' . htmlspecialchars($game['playlist_id']); ?>
                 <p><?= __('playlist_ready') ?></p>
-                <div style="background: var(--secondary-color); padding: 1rem; border-radius: 6px; word-break: break-all; margin-bottom: 1rem;">
-                    <a href="<?= $playlistUrl ?>" target="_blank" style="color: var(--accent-color);"><?= $playlistUrl ?></a>
+                <div style="background: var(--bg-color); padding: 1rem; border-radius: 6px; word-break: break-all; margin-bottom: 1rem;">
+                    <a href="<?= $playlistUrl ?>" target="_blank" rel="noopener" style="color: var(--accent-color);"><?= $playlistUrl ?></a>
                 </div>
                 <form method="POST">
-                    <button type="submit" name="create_playlist" class="btn btn-secondary">🔄 <?= __('playlist_sync') ?></button>
+                    <button type="submit" name="create_playlist" class="btn btn-secondary">&#128260; <?= __('playlist_sync') ?></button>
                 </form>
             <?php elseif ($hasOAuthToken): ?>
                 <p><?= __('playlist_create_hint') ?></p>
                 <form method="POST">
-                    <button type="submit" name="create_playlist" class="btn btn-primary">🎵 <?= __('playlist_create') ?></button>
+                    <button type="submit" name="create_playlist" class="btn btn-primary">&#127925; <?= __('playlist_create') ?></button>
                 </form>
             <?php else: ?>
                 <p><?= __('playlist_need_auth') ?></p>
-                <a href="oauth.php" class="btn btn-secondary">🔑 <?= __('playlist_authorize') ?></a>
+                <a href="oauth.php" class="btn btn-secondary">&#128273; <?= __('playlist_authorize') ?></a>
             <?php endif; ?>
         </div>
     </div>
 
-    <script>
-        const toggle = document.getElementById('themeToggle');
-        toggle.addEventListener('click', () => {
-            const body = document.body;
-            if (body.getAttribute('data-theme') === 'dark') {
-                body.removeAttribute('data-theme');
-                localStorage.setItem('theme', 'light');
-                toggle.textContent = '🌙';
-            } else {
-                body.setAttribute('data-theme', 'dark');
-                localStorage.setItem('theme', 'dark');
-                toggle.textContent = '☀️';
-            }
-        });
-
-        if (localStorage.getItem('theme') === 'dark') {
-            document.body.setAttribute('data-theme', 'dark');
-            toggle.textContent = '☀️';
-        }
-    </script>
-</body>
-</html>
+    <?php sg_share_modal($gameCode); ?>
+<?php sg_page_end(); ?>

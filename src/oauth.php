@@ -36,20 +36,14 @@ if (isset($_GET['start'])) {
     header('Location: https://accounts.google.com/o/oauth2/v2/auth?' . $params);
     exit;
 }
+
+sg_page_start('YouTube Authorization');
 ?>
-<!DOCTYPE html>
-<html lang="<?= $_SESSION['lang'] ?>">
-<head>
-    <meta charset="UTF-8">
-    <title>YouTube Authorization</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body data-theme="dark">
 <div id="wrapper">
-    <div class="card" style="max-width: 500px; margin: 4rem auto; text-align: center;">
-        <h1>🔑 YouTube Authorization</h1>
+    <div class="card" style="max-width: 500px; margin: 4rem auto;">
+        <h1>&#128273; YouTube Authorization</h1>
         <?php if (isset($error)): ?>
-            <p style="color: #e74c3c;"><?= htmlspecialchars($error) ?></p>
+            <p class="msg-error"><?= htmlspecialchars($error) ?></p>
         <?php else: ?>
             <p>Grant SongGame access to create YouTube playlists on your behalf.</p>
         <?php endif; ?>
@@ -57,8 +51,7 @@ if (isset($_GET['start'])) {
             Authorize with Google
         </a>
         <br><br>
-        <a href="admin-view.php">← Back to Admin</a>
+        <a href="admin-view.php">&larr; Back to Admin</a>
     </div>
 </div>
-</body>
-</html>
+<?php sg_page_end(); ?>

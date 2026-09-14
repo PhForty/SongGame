@@ -67,18 +67,123 @@ class YouTubeService {
     }
 
     /**
-     * Get video metadata using API Key
+     * Get video metadata.
+     *
+     * Prefers the Data API (authoritative about embedding), but falls back to
+     * YouTube's oEmbed endpoint, which needs no API key. Without that fallback
+     * every title reads "Unknown Title" on installs that never configured
+     * YT_API_KEY.
+     *
+     * 'embeddable' is false for clips whose owner only allows playback on
+     * youtube.com — those would fail silently in our iframe, so the submitter
+     * gets told right away and the viewer can offer a direct link instead.
+     * Returns null when the video does not exist or nothing could be reached.
      */
     public function getVideoDetails($videoId) {
-        $url = "https://www.googleapis.com/youtube/v3/videos?part=snippet&id=" . urlencode($videoId) . "&key=" . urlencode($this->apiKey);
-        $response = $this->makeRequest($url);
-        if (!empty($response['items'])) {
-            return [
-                'title' => $response['items'][0]['snippet']['title'],
-                'thumbnail' => $response['items'][0]['snippet']['thumbnails']['default']['url']
-            ];
+        if (self::looksLikeApiKey($this->apiKey)) {
+            $details = $this->fetchFromDataApi($videoId);
+            if ($details) {
+                return $details;
+            }
         }
-        return null;
+        return self::fetchFromOEmbed($videoId);
+    }
+
+    /** A placeholder such as '...' must not cost us a doomed round trip. */
+    private static function looksLikeApiKey($key) {
+        return is_string($key) && preg_match('/^[A-Za-z0-9_\-]{20,}$/', $key) === 1;
+    }
+
+    private function fetchFromDataApi($videoId) {
+        $url = "https://www.googleapis.com/youtube/v3/videos?part=snippet,status&id="
+            . urlencode($videoId) . "&key=" . urlencode($this->apiKey);
+        list($status, $body) = self::httpGet($url);
+        $response = json_decode((string)$body, true);
+
+        if ($status !== 200 || isset($response['error'])) {
+            self::logFailure('YouTube Data API request failed', [
+                'video_id' => $videoId,
+                'status'   => $status,
+                'message'  => $response['error']['message'] ?? substr((string)$body, 0, 200),
+            ]);
+            return null;
+        }
+        if (empty($response['items'])) {
+            return null;
+        }
+
+        $item = $response['items'][0];
+        return [
+            'title' => $item['snippet']['title'],
+            'thumbnail' => $item['snippet']['thumbnails']['default']['url'],
+            // Absent 'embeddable' means the API answered without the status
+            // part; assume playable rather than blocking a valid song.
+            'embeddable' => !isset($item['status']['embeddable']) || (bool)$item['status']['embeddable'],
+        ];
+    }
+
+    /**
+     * Key-free metadata via oEmbed.
+     * 200 = fine, 401 = the owner disallows embedding, 404 = no such video.
+     */
+    private static function fetchFromOEmbed($videoId) {
+        $url = 'https://www.youtube.com/oembed?url='
+            . urlencode('https://www.youtube.com/watch?v=' . $videoId) . '&format=json';
+        list($status, $body) = self::httpGet($url);
+        return self::interpretOEmbed($status, $body, $videoId);
+    }
+
+    /** Pure status/body -> result mapping, kept separate from the I/O so it is testable. */
+    private static function interpretOEmbed($status, $body, $videoId = '') {
+        if ($status === 401 || $status === 403) {
+            // Embedding is blocked, so oEmbed will not tell us the title.
+            return ['title' => null, 'thumbnail' => null, 'embeddable' => false];
+        }
+        if ($status !== 200) {
+            if ($status !== 404) {
+                self::logFailure('YouTube oEmbed request failed', [
+                    'video_id' => $videoId, 'status' => $status,
+                ]);
+            }
+            return null;
+        }
+
+        $data = json_decode((string)$body, true);
+        if (!isset($data['title'])) {
+            return null;
+        }
+        return [
+            'title' => $data['title'],
+            'thumbnail' => $data['thumbnail_url'] ?? null,
+            'embeddable' => true,
+        ];
+    }
+
+    /** Returns [httpStatus, body]; status is 0 when the request never completed. */
+    private static function httpGet($url) {
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        $body = curl_exec($ch);
+        $status = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if ($body === false || $status === 0) {
+            // Usually a missing CA bundle or no outbound network — worth logging,
+            // because otherwise every title silently degrades to "Unknown Title".
+            self::logFailure('HTTP request to YouTube failed', ['url' => $url, 'error' => $error]);
+            return [0, null];
+        }
+        return [$status, $body];
+    }
+
+    private static function logFailure($message, $context) {
+        if (function_exists('goose_log')) {
+            goose_log($message, $context);
+        }
     }
 
     /**

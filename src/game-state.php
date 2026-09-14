@@ -56,7 +56,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // --- GET: return current state (also drives auto-advance) ---
 $state = $db->fetchOne(
     "SELECT s.current_video_id, s.phase, s.started_at, s.autoplay, s.pause_duration, s.play_duration,
-            COALESCE(sg.start_offset, 0) AS start_offset
+            COALESCE(sg.start_offset, 0) AS start_offset,
+            sg.title AS title,
+            COALESCE(sg.embeddable, 1) AS embeddable
      FROM sessions s
      LEFT JOIN songs sg ON sg.video_id = s.current_video_id AND sg.session_id = s.id
      WHERE s.id = ?",
@@ -136,12 +138,35 @@ if ($autoplay) {
     }
 }
 
+// Only the 'playing' phase has a current song — never leak one while idle or paused.
+if ($phase !== 'playing') {
+    $videoId = null;
+}
+
+// Re-read the joined song row when auto-advance picked a different video above.
+if ($videoId !== null && $videoId !== ($state['current_video_id'] ?? null)) {
+    $song = $db->fetchOne(
+        "SELECT start_offset, title, embeddable FROM songs WHERE session_id = ? AND video_id = ?",
+        [$sessionId, $videoId]
+    );
+    $state['start_offset'] = $song['start_offset'] ?? 0;
+    $state['title']        = $song['title'] ?? null;
+    $state['embeddable']   = $song['embeddable'] ?? 1;
+}
+
 echo json_encode([
     'current_video_id' => $videoId,
-    'start_offset'     => (int)($state['start_offset'] ?? 0),
+    'title'            => $videoId === null ? null : ($state['title'] ?? null),
+    'embeddable'       => $videoId === null ? true : (bool)($state['embeddable'] ?? 1),
+    'watch_url'        => $videoId === null ? null : sg_watch_url($videoId, (int)($state['start_offset'] ?? 0)),
+    'start_offset'     => $videoId === null ? 0 : (int)($state['start_offset'] ?? 0),
     'phase'            => $phase,
     'started_at'       => $startedAt,
     'server_now'       => $serverNow,
+    'songs_left'       => (int)($db->fetchOne(
+        "SELECT COUNT(*) AS n FROM songs WHERE session_id = ? AND was_viewed = 0",
+        [$sessionId]
+    )['n'] ?? 0),
     'settings'         => [
         'autoplay'       => $autoplay,
         'pause_duration' => $pauseDuration,

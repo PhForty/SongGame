@@ -63,6 +63,43 @@ return [
         'playlist_sync'       => 'Neue Songs zur Playlist hinzufügen',
         'playlist_up_to_date' => 'Playlist ist bereits aktuell – keine neuen Songs.',
         'playlist_updated'    => '%d Song(s) zur Playlist hinzugefügt.',
+
+        // Submission list
+        'my_songs_none'       => 'Du hast noch nichts eingereicht.',
+        'delete_song'         => 'Löschen',
+        'delete_confirm'      => 'Diesen Song wirklich aus dem Topf entfernen?',
+        'song_deleted'        => 'Song entfernt.',
+        'song_delete_failed'  => 'Song konnte nicht entfernt werden.',
+        'already_played'      => 'bereits gespielt',
+        'open_on_youtube'     => 'Auf YouTube öffnen',
+
+        // Embedding
+        'not_embeddable'      => 'kein Embed',
+        'not_embeddable_hint' => 'Hinweis: Dieses Video darf laut Rechteinhaber nur direkt auf YouTube abgespielt werden. Es landet trotzdem im Topf – beim Abspielen gibt es stattdessen einen Link.',
+        'cannot_play'         => 'Dieses Video lässt sich hier nicht abspielen.',
+        'cannot_play_hint'    => 'Der Rechteinhaber erlaubt die Wiedergabe nur auf YouTube.',
+        'video_unavailable'   => 'Video nicht verfügbar (privat, gelöscht oder gesperrt).',
+
+        // Viewer
+        'zen_mode'            => 'Zen-Modus',
+        'zen_enter'           => 'Zen-Modus (nur Video)',
+        'zen_exit'            => 'Zen-Modus beenden',
+        'fullscreen'          => 'Vollbild',
+        'fullscreen_exit'     => 'Vollbild beenden',
+        'show_controls'       => 'YouTube-Steuerung anzeigen',
+        'show_captions'       => 'Untertitel anzeigen',
+        'viewer_options'      => 'Ansicht',
+        'paused_next_in'      => 'Nächstes Video in %d s',
+        'playing_remaining'   => 'Läuft noch %d s',
+        'no_songs_left'       => 'Keine Songs mehr im Topf.',
+
+        // Share / QR
+        'share_game'          => 'Spiel teilen',
+        'share_qr'            => 'QR-Code teilen',
+        'share_hint'          => 'Scannen oder Code eingeben, um mitzuspielen:',
+        'close'               => 'Schließen',
+        'copy_link'           => 'Link kopieren',
+        'copied'              => 'Kopiert!',
     ],
     'en' => [
         'title_join' => 'SongGame - Join',
@@ -124,5 +161,42 @@ return [
         'playlist_sync'       => 'Add new songs to playlist',
         'playlist_up_to_date' => 'Playlist is already up to date – no new songs.',
         'playlist_updated'    => '%d song(s) added to the playlist.',
+
+        // Submission list
+        'my_songs_none'       => 'You have not submitted anything yet.',
+        'delete_song'         => 'Delete',
+        'delete_confirm'      => 'Really remove this song from the pot?',
+        'song_deleted'        => 'Song removed.',
+        'song_delete_failed'  => 'Could not remove the song.',
+        'already_played'      => 'already played',
+        'open_on_youtube'     => 'Open on YouTube',
+
+        // Embedding
+        'not_embeddable'      => 'no embed',
+        'not_embeddable_hint' => 'Heads up: the rights holder only allows this video to play on YouTube itself. It still goes into the pot — during playback everyone gets a link instead.',
+        'cannot_play'         => 'This video cannot be played here.',
+        'cannot_play_hint'    => 'The rights holder only allows playback on YouTube.',
+        'video_unavailable'   => 'Video unavailable (private, deleted or blocked).',
+
+        // Viewer
+        'zen_mode'            => 'Zen mode',
+        'zen_enter'           => 'Zen mode (video only)',
+        'zen_exit'            => 'Leave zen mode',
+        'fullscreen'          => 'Fullscreen',
+        'fullscreen_exit'     => 'Leave fullscreen',
+        'show_controls'       => 'Show YouTube controls',
+        'show_captions'       => 'Show subtitles',
+        'viewer_options'      => 'View',
+        'paused_next_in'      => 'Next video in %d s',
+        'playing_remaining'   => '%d s remaining',
+        'no_songs_left'       => 'No songs left in the pot.',
+
+        // Share / QR
+        'share_game'          => 'Share game',
+        'share_qr'            => 'Share QR code',
+        'share_hint'          => 'Scan or enter the code to join:',
+        'close'               => 'Close',
+        'copy_link'           => 'Copy link',
+        'copied'              => 'Copied!',
     ],
 ];

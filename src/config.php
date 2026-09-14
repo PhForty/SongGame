@@ -17,7 +17,11 @@ define('DB_NAME', 'song_game');
 // YouTube API configuration
 // Note: Creating playlists requires OAuth2 access tokens. 
 // For a simple rewrite, we'll store the token and refresh token here or in DB.
-define('YT_API_KEY', '...'); // Used for public data (thumbnails)
+// Optional. Without a valid key SongGame falls back to YouTube's oEmbed
+// endpoint, which supplies video titles without any key; the key only adds the
+// authoritative "is this video embeddable" flag. Creating playlists still needs
+// the OAuth2 client below.
+define('YT_API_KEY', '...');
 define('YT_CLIENT_ID', '...');
 define('YT_CLIENT_SECRET', '...');
 

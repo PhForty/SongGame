@@ -30,6 +30,7 @@ CREATE TABLE `songs` (
   `start_offset` int(11) NOT NULL DEFAULT 0,
   `title` varchar(255) DEFAULT NULL,
   `was_viewed` tinyint(1) DEFAULT 0,
+  `embeddable` tinyint(1) NOT NULL DEFAULT 1,
   `playlist_added` tinyint(1) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
@@ -43,3 +44,7 @@ CREATE TABLE IF NOT EXISTS `app_config` (
   `value` text DEFAULT NULL,
   PRIMARY KEY (`key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Keeps Migrations.php from re-running steps already covered by this file.
+INSERT INTO `app_config` (`key`, `value`) VALUES ('schema_version', '1')
+  ON DUPLICATE KEY UPDATE `value` = VALUES(`value`);
