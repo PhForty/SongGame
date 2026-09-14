@@ -40,7 +40,7 @@ Jeder Push auf `main` deployt nach songgame.de: [.github/workflows/deploy.yml](.
 
 1. PHP-Syntaxcheck über alle Dateien in `src/`.
 2. `src/config.local.php` wird aus den Secrets geschrieben.
-3. `src/` wird per FTPS auf den All-Inkl-Webspace gespiegelt (inkrementell, nur geänderte Dateien).
+3. `src/` wird per `lftp mirror` über FTPS auf den All-Inkl-Webspace gespiegelt. Dateien, die im Repo gelöscht wurden, verschwinden auch auf dem Server; `app.log`, `.well-known/` und die Wegwerf-Skripte sind davon ausgenommen.
 4. **Nur wenn sich `src/schema.sql` im Push geändert hat:** die Datenbank wird daraus neu aufgebaut.
 
 ## Datenbank-Reset
@@ -74,7 +74,7 @@ Optionale *Variables* (mit Defaults, nur setzen wenn abweichend):
 | --- | --- | --- |
 | `FTP_SERVER_DIR` | `/` | Zielverzeichnis des FTP-Users; bei All-Inkl oft `/songgame.de/` o. ä. |
 | `SITE_URL` | `https://songgame.de` | Basis-URL für den Aufruf des Wegwerf-Skripts |
-| `FTP_PROTOCOL` | `ftps` | `ftp`, falls der Account kein FTPS kann |
+| `FTP_PROTOCOL` | `ftps` | explizites FTPS (AUTH TLS auf Port 21). `ftp` schaltet TLS ab |
 
 ## Fehlersuche
 **`530 Login incorrect` beim FTP-Schritt** — TLS und Host stimmen dann bereits, nur die Zugangsdaten werden abgelehnt. In dieser Reihenfolge prüfen:
@@ -84,6 +84,8 @@ Optionale *Variables* (mit Defaults, nur setzen wenn abweichend):
    ```powershell
    curl.exe -v --ssl-reqd --user "BENUTZER:PASSWORT" --list-only ftp://wXXXXXX.kasserver.com/
    ```
+**`ECONNRESET (data socket)` beim Upload** — Login und Dateiliste klappen dann bereits, nur der Datenkanal bricht ab. Ursache war eine IPv6-Kontrollverbindung: `wXXXXXX.kasserver.com` hat auch einen AAAA-Record, und über IPv6 fordert der Client einen EPSV-Datenkanal an, den der Runner nicht erreicht. Der Workflow setzt deshalb `dns:order "inet"` und `ftp:prefer-epsv false` in `~/.lftprc`.
+
 3. Im KAS steht unter *FTP* der exakte Benutzername — nicht die KAS-Kennung und nicht die E-Mail-Adresse. Ein zusätzlicher FTP-Benutzer hat außerdem ein eigenes Passwort, nicht das des KAS-Logins.
 
 # Bedienung

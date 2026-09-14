@@ -10,7 +10,7 @@ on:
         type: boolean
         default: false
 
-# Two deploys writing over FTP at the same time would corrupt the sync state.
+# Two deploys writing over FTP at the same time would trip over each other.
 concurrency:
   group: deploy-songgame
   cancel-in-progress: false
@@ -29,7 +29,7 @@ jobs:
 
     steps:
       - name: Check out
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Full history so the schema diff below can reach the previous commit.
           fetch-depth: 0
@@ -137,21 +137,70 @@ jobs:
           '
           php -l src/config.local.php
 
-      - name: Upload src/ over FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ${{ vars.FTP_PROTOCOL || 'ftps' }}
-          local-dir: ./src/
-          server-dir: ${{ vars.FTP_SERVER_DIR || '/' }}
-          # Never touch the live log or repository metadata.
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/app.log
-            **/_sg-apply-schema-*.php
+      - name: Set up lftp
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lftp
+
+          # Every lftp call in this job reads these. Written once here because
+          # steps do not share shell state, only the filesystem.
+          #
+          # The two settings that matter are not defaults:
+          #   dns:order inet      - all-inkl publishes an AAAA record, and an
+          #                         IPv6 control connection makes the client ask
+          #                         for an EPSV data channel that the runner then
+          #                         cannot reach (ECONNRESET on the data socket).
+          #   ftp:ssl-force       - "ftps://" in lftp means *implicit* TLS on
+          #                         port 990. All-inkl speaks *explicit* FTPS, so
+          #                         the URL stays ftp:// and TLS is forced here.
+          # Not `[ ... ] && ssl_force=false` — under `set -e` a false test there
+          # is the last command in the list and would abort the step.
+          ssl_force=true
+          if [ "${FTP_PROTOCOL}" = "ftp" ]; then
+            ssl_force=false
+          fi
+
+          cat > "$HOME/.lftprc" <<RC
+          set dns:order "inet"
+          set ftp:prefer-epsv false
+          set ftp:passive-mode true
+          set ftp:ssl-force ${ssl_force}
+          set ftp:ssl-protect-data true
+          set ftp:ssl-protect-list true
+          set ssl:verify-certificate true
+          set net:max-retries 3
+          set net:timeout 20
+          set net:reconnect-interval-base 5
+          set xfer:clobber true
+          set cmd:fail-exit true
+          RC
+          echo "lftp settings:"
+          cat "$HOME/.lftprc"
+
+      - name: Mirror src/ to the webspace
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          # "/" strips to "", which is the right prefix for building a path but
+          # not a directory lftp can cd into — hence the two forms.
+          remote_dir="${REMOTE_DIR%/}"
+          put_dir="${remote_dir:-/}"
+
+          # Built up piecewise so the quoting stays readable. The single quotes
+          # survive into lftp, which does its own quote parsing, so bash never
+          # glob-expands the patterns here.
+          cmd="mirror --reverse --delete --verbose --no-perms"
+          cmd="$cmd --exclude-glob app.log"
+          cmd="$cmd --exclude-glob '_sg-apply-schema-*.php'"
+          cmd="$cmd --exclude-glob '.ftp-deploy-sync-state.json'"
+          cmd="$cmd --exclude '^\.well-known/'"
+          cmd="$cmd ./src/ '$put_dir'"
+
+          lftp -u "$FTP_USERNAME,$FTP_PASSWORD" "ftp://${FTP_HOST}" -e "$cmd; bye"
 
       - name: Apply src/schema.sql via a one-shot script
         if: steps.schema.outputs.changed == 'true'
@@ -161,9 +210,6 @@ jobs:
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: |
           set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq lftp
-
           # Hex only, so it is safe as a sed replacement and as a header value.
           token="$(openssl rand -hex 32)"
           echo "::add-mask::$token"
@@ -174,15 +220,12 @@ jobs:
             .github/scripts/apply-schema.php.tpl > "$name"
           php -l "$name" > /dev/null
 
-          # "/" strips to "", which is the right prefix for building a path but
-          # not a directory lftp can cd into — hence the two forms.
           remote_dir="${REMOTE_DIR%/}"
           put_dir="${remote_dir:-/}"
           remote_file="${remote_dir}/${name}"
 
           lftp_run() {
-            lftp -u "$FTP_USERNAME,$FTP_PASSWORD" "${FTP_PROTOCOL}://${FTP_HOST}" \
-                 -e "set ssl:verify-certificate true; set net:max-retries 3; $1; bye"
+            lftp -u "$FTP_USERNAME,$FTP_PASSWORD" "ftp://${FTP_HOST}" -e "$1; bye"
           }
 
           # Guarantee removal even if the HTTP call below fails or the job is
@@ -217,17 +260,15 @@ jobs:
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: |
           set -uo pipefail
-          command -v lftp > /dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq lftp; }
           remote_dir="${REMOTE_DIR%/}"
-          leftovers=$(lftp -u "$FTP_USERNAME,$FTP_PASSWORD" "${FTP_PROTOCOL}://${FTP_HOST}" \
-            -e "set ssl:verify-certificate true; cls -1 \"${remote_dir}/_sg-apply-schema-*.php\"; bye" \
-            2>/dev/null || true)
+          leftovers=$(lftp -u "$FTP_USERNAME,$FTP_PASSWORD" "ftp://${FTP_HOST}" \
+            -e "cls -1 \"${remote_dir}/_sg-apply-schema-*.php\"; bye" 2>/dev/null || true)
           if [ -n "$leftovers" ]; then
             echo "::warning::Removing leftover one-shot script(s): $leftovers"
             while IFS= read -r f; do
               [ -n "$f" ] || continue
-              lftp -u "$FTP_USERNAME,$FTP_PASSWORD" "${FTP_PROTOCOL}://${FTP_HOST}" \
-                -e "set ssl:verify-certificate true; rm -f \"$f\"; bye" || true
+              lftp -u "$FTP_USERNAME,$FTP_PASSWORD" "ftp://${FTP_HOST}" \
+                -e "rm -f \"$f\"; bye" || true
             done <<< "$leftovers"
           else
             echo "Nothing left behind."
