@@ -8,7 +8,7 @@ git clone https://github.com/PhForty/SongGame.git
 cd SongGame
 docker-compose up
 ```
-Dann im Browser https://localhost öffnen
+Dann im Browser http://localhost öffnen (Adminer liegt auf Port 8080)
 
 ## Manuell
 * Git Repo klonen
@@ -79,14 +79,16 @@ Optionale *Variables* (mit Defaults, nur setzen wenn abweichend):
 ## Fehlersuche
 **`530 Login incorrect` beim FTP-Schritt** — TLS und Host stimmen dann bereits, nur die Zugangsdaten werden abgelehnt. In dieser Reihenfolge prüfen:
 
-1. Der erste Workflow-Schritt gibt die Länge jedes Secrets aus und bricht ab, wenn eines mit Leerzeichen oder Zeilenumbruch anfängt oder endet. Stimmt die Länge von `FTP_PASSWORD` mit dem echten Passwort überein?
+1. Der Secret-Check am Anfang des Workflows gibt die Länge jedes Secrets aus und bricht ab, wenn eines mit Leerzeichen oder Zeilenumbruch anfängt oder endet. Stimmt die Länge von `FTP_PASSWORD` mit dem echten Passwort überein?
 2. Die Zugangsdaten lokal gegenprüfen (zeigt das Wurzelverzeichnis des FTP-Users, praktisch auch für `FTP_SERVER_DIR`):
    ```powershell
    curl.exe -v --ssl-reqd --user "BENUTZER:PASSWORT" --list-only ftp://wXXXXXX.kasserver.com/
    ```
-**`ECONNRESET (data socket)` beim Upload** — Login und Dateiliste klappen dann bereits, nur der Datenkanal bricht ab. Ursache war eine IPv6-Kontrollverbindung: `wXXXXXX.kasserver.com` hat auch einen AAAA-Record, und über IPv6 fordert der Client einen EPSV-Datenkanal an, den der Runner nicht erreicht. Der Workflow setzt deshalb `dns:order "inet"` und `ftp:prefer-epsv false` in `~/.lftprc`.
-
 3. Im KAS steht unter *FTP* der exakte Benutzername — nicht die KAS-Kennung und nicht die E-Mail-Adresse. Ein zusätzlicher FTP-Benutzer hat außerdem ein eigenes Passwort, nicht das des KAS-Logins.
+
+**`ECONNRESET (data socket)` beim Upload** — Login und Dateiliste klappen dann bereits, nur der Datenkanal bricht ab. Ursache war eine IPv6-Kontrollverbindung: `wXXXXXX.kasserver.com` hat auch einen AAAA-Record, und über IPv6 fordert der Client einen EPSV-Datenkanal an, den der Runner nicht erreicht. Der Workflow setzt deshalb `dns:order "inet"` und `ftp:prefer-epsv false` in `~/.lftprc`. Diese beiden Zeilen also nicht entfernen.
+
+**Verbindung läuft in einen Timeout** — in lftp bedeutet `ftps://` *implizites* TLS auf Port 990. All-Inkl kann nur explizites FTPS (AUTH TLS auf Port 21). Die URL muss deshalb `ftp://` bleiben, TLS kommt über `set ftp:ssl-force true`.
 
 # Bedienung
 * **Spiel teilen:** Der Host findet im Kopfbereich einen "Spiel teilen"-Button mit QR-Code zum Herumzeigen.

@@ -11,12 +11,12 @@ SongGame is a synchronized music experience where players submit YouTube videos 
 ## File Structure
 - `src/config.php`: Global configuration. It only carries the docker-compose defaults; real credentials come from `src/config.local.php`, which is gitignored and written by the deploy pipeline from GitHub secrets. Every key falls back to the default when the local file is absent or leaves it empty, so a bare checkout still runs under `docker-compose up`.
 - `src/partials.php`: Shared page chrome (`<head>`, nav header, share dialog) plus URL helpers. The theme bootstrap lives here — it sets `data-theme` on `<html>` from an inline script *before* the stylesheet, which is what prevents the white flash on reload.
-- `src/Migrations.php`: Forward-only schema migrator. `schema.sql` only runs on a fresh database, so new columns are applied here and the applied version is stored in `app_config.schema_version`.
+- `src/Migrations.php`: Forward-only schema migrator. `schema.sql` runs only on a fresh database or on a deliberate pipeline reset, so new columns are applied here and the applied version is stored in `app_config.schema_version`. The reset script pins that version to `Migrations::TARGET_VERSION` afterwards, which is why `schema.sql`'s own hardcoded `'1'` is not authoritative.
 - `src/qrcode.js`: Dependency-free QR encoder (byte mode, ECC level M, versions 1-15) used for the host's share dialog, so the game needs no internet to hand out its join link.
 - `src/theme.js` / `src/share.js`: Theme toggle and share dialog behaviour.
 - `src/bootstrap.php`: Initializes the environment, includes dependencies, and starts the session.
 - `src/Database.php`: Custom wrapper for MySQLi to provide simplified query execution and fetching.
-- `src/Auth.php`: Handles user sessions, game codes, and role-based access control (Admin vs Player).
+- `src/Auth.php`: Handles user sessions, game codes, and role-based access control (Admin vs Player). `generateGameCode()` draws 5 symbols from `CODE_ALPHABET`, which is uppercase alphanumerics minus both members of every look-alike pair (0/O/Q, 1/I/L, 8/B, 5/S, 2/Z, 6/G, U/V) so a code shown on screen or read across a room cannot be misread — do not "restore" the missing letters. 21 symbols still yield 4,084,101 codes, about four times the old `substr(md5(...), 0, 5)` hex range. `game_code` is UNIQUE, so generation re-rolls on a taken code instead of letting the INSERT surface a collision as a blank 500.
 - `src/YouTubeService.php`: Extracts video IDs and fetches metadata. `getVideoDetails()` uses the Data API when `YT_API_KEY` looks like a real key and otherwise falls back to YouTube's **oEmbed** endpoint, which returns titles without any key — that fallback is why titles no longer degrade to "Unknown Title" on installs that never configured one. Failures are written to `app.log` via `goose_log()` instead of being swallowed.
 - `src/schema.sql`: Database schema definition. It `DROP`s `sessions` and `songs`, so it is only ever applied to a fresh database or by a deliberate reset — additive changes belong in `Migrations.php`.
 
@@ -54,8 +54,9 @@ Some clips are restricted to playback on youtube.com. `YouTubeService::getVideoD
 - **Server-Side AC:** Access control for Admin pages is verified on the server via `Auth::requireAdmin()`.
 - **XSS Prevention:** User-supplied data (titles, video IDs) are escaped using `htmlspecialchars()` before rendering.
 - **Session Security:** Sessions use `HttpOnly` and `SameSite=Lax` cookies to mitigate session hijacking and CSRF.
+- **Secrets off the web:** `src/.htaccess` denies `.log`, `.sql`, `.md`, `.json`, `.yaml` and `config.local.php`. PHP is never served as source, but if the handler ever fails the credentials would otherwise be readable as plain text.
 
 ## Future Agents Guide
 - To add new features: add a `Migrations.php` step *and* mirror it into `schema.sql` if a column is needed -> Add logic in `YouTubeService` or `Auth` -> Implement UI changes. Touching `schema.sql` makes the next deploy wipe the production database, so never edit it just to keep the two files in sync.
 - To change sync frequency: Adjust the `setInterval` value in `viewer.php`.
-- To update API keys: change the `YT_*` GitHub secrets (production) or `src/config.local.php` (local); `src/config.php` only holds defaults.
+- To update API keys: change the `YT_*` repository secrets on GitHub for songgame.de, or `src/config.local.php` for a local install; `src/config.php` only holds defaults.

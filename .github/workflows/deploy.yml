@@ -196,7 +196,6 @@ jobs:
           cmd="mirror --reverse --delete --verbose --no-perms"
           cmd="$cmd --exclude-glob app.log"
           cmd="$cmd --exclude-glob '_sg-apply-schema-*.php'"
-          cmd="$cmd --exclude-glob '.ftp-deploy-sync-state.json'"
           cmd="$cmd --exclude '^\.well-known/'"
           cmd="$cmd ./src/ '$put_dir'"
 

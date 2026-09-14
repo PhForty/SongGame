@@ -5,9 +5,6 @@ src/config.local.php
 src/app.log
 app.log
 
-# FTP-Deploy-Action state (lives on the server, may get pulled down locally)
-.ftp-deploy-sync-state.json
-
 # One-shot schema appliers generated during a deploy run
 _sg-apply-schema-*.php
 src/_sg-apply-schema-*.php

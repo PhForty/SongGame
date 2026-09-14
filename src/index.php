@@ -18,8 +18,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
     } elseif (isset($_POST['create'])) {
-        $code = strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 5));
-        $db->execute("INSERT INTO sessions (game_code, is_host_active) VALUES (?, ?)", [$code, 1]);
+        try {
+            $code = Auth::generateGameCode($db);
+            $db->execute("INSERT INTO sessions (game_code, is_host_active) VALUES (?, ?)", [$code, 1]);
+        } catch (Exception $e) {
+            goose_log('Game creation failed', $e->getMessage());
+            header("Location: index.php?error=" . urlencode(__('create_failed')));
+            exit;
+        }
         Auth::login($code, session_id());
         Auth::setAsHost();
         header("Location: eingabe.php");

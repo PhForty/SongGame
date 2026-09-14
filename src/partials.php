@@ -25,7 +25,7 @@ function sg_page_start($title, $opts = []) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light dark">
     <title><?= htmlspecialchars($title) ?></title>
-    <link rel="icon" href="favicon.ico">
+    <link rel="icon" href="<?= sg_asset('favicon.ico') ?>">
     <?php /* Runs before the stylesheet paints, so there is no white flash on reload. */ ?>
     <script>
     (function () {
@@ -42,7 +42,7 @@ function sg_page_start($title, $opts = []) {
         }
     })();
     </script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="<?= sg_asset('style.css') ?>">
 </head>
 <body<?= $bodyClass ? ' class="' . htmlspecialchars($bodyClass) . '"' : '' ?>>
 <?php
@@ -95,7 +95,7 @@ function sg_header($active, $isAdmin, $extraHtml = '') {
 /** Closes the document and wires up the theme toggle. */
 function sg_page_end() {
     ?>
-    <script src="theme.js"></script>
+    <script src="<?= sg_asset('theme.js') ?>"></script>
 </body>
 </html>
 <?php
@@ -122,8 +122,8 @@ function sg_share_modal($gameCode) {
             </p>
         </div>
     </div>
-    <script src="qrcode.js"></script>
-    <script src="share.js"></script>
+    <script src="<?= sg_asset('qrcode.js') ?>"></script>
+    <script src="<?= sg_asset('share.js') ?>"></script>
     <?php
 }
 
@@ -132,6 +132,19 @@ function sg_share_button($class = 'btn btn-secondary btn-small') {
     ?>
     <button type="button" id="shareOpen" class="<?= htmlspecialchars($class) ?>">&#128279; <?= __('share_game') ?></button>
     <?php
+}
+
+/**
+ * Versioned URL for a local asset.
+ *
+ * The pages are plain files with no build step, so a browser that once cached
+ * style.css keeps serving it until its heuristic freshness runs out — the host
+ * sends no Cache-Control, so after a redesign players kept seeing the old
+ * layout. Appending the mtime makes every deploy a new URL.
+ */
+function sg_asset($file) {
+    $mtime = @filemtime(__DIR__ . '/' . $file);
+    return $file . ($mtime ? '?v=' . $mtime : '');
 }
 
 /**
