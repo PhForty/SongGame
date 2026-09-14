@@ -53,7 +53,7 @@ Die Pipeline verbindet sich **nie selbst** zur Datenbank: Der Reset läuft in ei
 Technisch gibt es auf dem Server keinen dauerhaften Deploy-Endpunkt: Die Pipeline erzeugt pro Lauf ein Wegwerf-Skript aus [.github/scripts/apply-schema.php.tpl](.github/scripts/apply-schema.php.tpl) mit zufälligem Dateinamen und zufälligem Token, lädt es hoch, ruft es einmal per HTTPS auf und löscht es wieder. Zusätzlich löscht das Skript sich selbst und verweigert nach 10 Minuten den Dienst.
 
 ## Secrets und Variables
-Unter *Settings → Secrets and variables → Actions* anlegen (Secrets im Environment `production`, falls du einen Approval-Gate willst):
+Als Repository-Secrets bzw. -Variables unter *Settings → Secrets and variables → Actions* anlegen:
 
 | Secret | Beispiel / Quelle |
 | --- | --- |
@@ -75,6 +75,16 @@ Optionale *Variables* (mit Defaults, nur setzen wenn abweichend):
 | `FTP_SERVER_DIR` | `/` | Zielverzeichnis des FTP-Users; bei All-Inkl oft `/songgame.de/` o. ä. |
 | `SITE_URL` | `https://songgame.de` | Basis-URL für den Aufruf des Wegwerf-Skripts |
 | `FTP_PROTOCOL` | `ftps` | `ftp`, falls der Account kein FTPS kann |
+
+## Fehlersuche
+**`530 Login incorrect` beim FTP-Schritt** — TLS und Host stimmen dann bereits, nur die Zugangsdaten werden abgelehnt. In dieser Reihenfolge prüfen:
+
+1. Der erste Workflow-Schritt gibt die Länge jedes Secrets aus und bricht ab, wenn eines mit Leerzeichen oder Zeilenumbruch anfängt oder endet. Stimmt die Länge von `FTP_PASSWORD` mit dem echten Passwort überein?
+2. Die Zugangsdaten lokal gegenprüfen (zeigt das Wurzelverzeichnis des FTP-Users, praktisch auch für `FTP_SERVER_DIR`):
+   ```powershell
+   curl.exe -v --ssl-reqd --user "BENUTZER:PASSWORT" --list-only ftp://wXXXXXX.kasserver.com/
+   ```
+3. Im KAS steht unter *FTP* der exakte Benutzername — nicht die KAS-Kennung und nicht die E-Mail-Adresse. Ein zusätzlicher FTP-Benutzer hat außerdem ein eigenes Passwort, nicht das des KAS-Logins.
 
 # Bedienung
 * **Spiel teilen:** Der Host findet im Kopfbereich einen "Spiel teilen"-Button mit QR-Code zum Herumzeigen.

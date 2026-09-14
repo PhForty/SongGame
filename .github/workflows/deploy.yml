@@ -12,7 +12,7 @@ on:
 
 # Two deploys writing over FTP at the same time would corrupt the sync state.
 concurrency:
-  group: deploy-production
+  group: deploy-songgame
   cancel-in-progress: false
 
 permissions:
@@ -26,7 +26,6 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: production
 
     steps:
       - name: Check out
@@ -45,12 +44,34 @@ jobs:
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
+          # Only lengths and yes/no flags are printed. The secrets themselves are
+          # masked by Actions, but a *derived* string would not be, so nothing
+          # below ever echoes a transformed copy of a value.
           missing=()
+          dirty=()
           for name in FTP_HOST FTP_USERNAME FTP_PASSWORD DB_HOST DB_NAME DB_USER DB_PASSWORD; do
-            [ -n "${!name:-}" ] || missing+=("$name")
+            value="${!name:-}"
+            if [ -z "$value" ]; then
+              missing+=("$name")
+              continue
+            fi
+            # Leading/trailing only — a password may legitimately contain a space.
+            case "$value" in
+              [[:space:]]*|*[[:space:]]) dirty+=("$name") ;;
+            esac
+            echo "$name length=${#value}"
           done
+
           if [ ${#missing[@]} -gt 0 ]; then
             echo "::error::Missing repository secrets: ${missing[*]} - see README.md, section Deployment."
+            exit 1
+          fi
+
+          # A trailing newline picked up while copy-pasting is the usual reason
+          # for an FTP '530 Login incorrect' against credentials that are
+          # otherwise correct, and it is invisible in the Actions UI.
+          if [ ${#dirty[@]} -gt 0 ]; then
+            echo "::error::These secrets contain whitespace: ${dirty[*]}. Re-enter them without a trailing newline or space."
             exit 1
           fi
 
@@ -153,7 +174,12 @@ jobs:
             .github/scripts/apply-schema.php.tpl > "$name"
           php -l "$name" > /dev/null
 
+          # "/" strips to "", which is the right prefix for building a path but
+          # not a directory lftp can cd into — hence the two forms.
           remote_dir="${REMOTE_DIR%/}"
+          put_dir="${remote_dir:-/}"
+          remote_file="${remote_dir}/${name}"
+
           lftp_run() {
             lftp -u "$FTP_USERNAME,$FTP_PASSWORD" "${FTP_PROTOCOL}://${FTP_HOST}" \
                  -e "set ssl:verify-certificate true; set net:max-retries 3; $1; bye"
@@ -162,13 +188,13 @@ jobs:
           # Guarantee removal even if the HTTP call below fails or the job is
           # cancelled mid-step. The always() step after this is the second net.
           cleanup() {
-            echo "Removing ${remote_dir}/${name} from the server..."
-            lftp_run "rm -f \"${remote_dir}/${name}\"" \
-              || echo "::warning::Could not delete ${remote_dir}/${name} over FTP - remove it manually."
+            echo "Removing ${remote_file} from the server..."
+            lftp_run "rm -f \"${remote_file}\"" \
+              || echo "::warning::Could not delete ${remote_file} over FTP - remove it manually."
           }
           trap cleanup EXIT
 
-          lftp_run "put -O \"${remote_dir}\" \"${name}\""
+          lftp_run "put -O \"${put_dir}\" \"${name}\""
 
           echo "Calling ${SITE_URL}/${name} ..."
           status=$(curl --silent --show-error --location --max-time 120 \
